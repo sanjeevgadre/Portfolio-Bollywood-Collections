@@ -80,7 +80,8 @@ def tointeger(field):
 
 def val_in_soup(soup, string):
     '''
-    Finds the value associated with the string from the movie_soup 
+    Finds the value associated with the string (field_name) from the soup. 
+    This is not a generic function and there are some added constraints on the tags that must be present in the search criterion.
 
     Parameters
     ----------
@@ -108,77 +109,68 @@ movie_id = 0
 movie_lst = []
 regn_cons_lst = []
 
-for movie in movies[:5]:                                           # For now doing it for only one movie    
+for movie in movies[:1]:                                           # For now doing it for only one movie    
     movie_href = movie.get('href')
     movie_url = home + movie_href
     movie_html = requests.get(movie_url)
     movie_soup = BeautifulSoup(movie_html.content, 'html.parser')
     
-    movie_id += 1 
+    movie_id += 1
+    
+    dict_ = {'movie_id' : movie_id}
     
     try:
         title = movie_soup.find('a', href = re.compile('movieid')).text
-        title = str(title)
+        dict_['title'] = str(title)
     except AttributeError:
-        title = None
+        dict_['title'] = None
     
     try:
         release_date = movie_soup.find('span', class_ = 'redtext').text
-        release_date = str(release_date)
+        dict_['release_date'] = str(release_date)
     except AttributeError:
-        release_date = None
+        dict_['release_date'] = None
     
     try:
         runtime = movie_soup.find('a', href = re.compile('running-time.php')).next.next.next
         runtime = str(runtime)
         runtime = runtime.replace('min', '')
-        runtime = int(runtime)
+        dict_['runtime'] = int(runtime)
     except AttributeError:
-        runtime = None
+        dict_['runtime'] = int(runtime)
     
     try:
         genre = movie_soup.find('a', href = re.compile('genre.php')).text
-        genre = str(genre)
+        dict_['genre'] = str(genre)
     except AttributeError:
-        genre = None
+        dict_['genre'] = None
     
     try:
         screens = movie_soup.find('a', href = re.compile('screens.php')).find_next('td', class_ = 'td_cst_wd').text
-        screens = int(str(screens))
+        dict_['screens'] = int(str(screens))
     except AttributeError:
-        screens = None
+        dict_['screens'] = None
     
     try:
         india_footfalls = movie_soup.find('a', href = re.compile('india-footfalls.php?')).find_next('td').find_next('td').text
-        india_footfalls = tointeger(india_footfalls)
+        dict_['india_footfalls'] = tointeger(india_footfalls)
     except AttributeError:
-        india_footfalls = None
-    
-    budget = val_in_soup(movie_soup, 'budget.php')
-    
-    india_first_day = val_in_soup(movie_soup, 'india-first-day.php')
-    
-    india_first_weekend = val_in_soup(movie_soup, 'india-first-weekend.php')
+        dict_['india_footfalls'] = None
         
-    india_first_week = val_in_soup(movie_soup, 'india-first-week.php')
+    india_adj_nett_gross = val_in_soup(movie_soup, 'india-adjusted-nett-gross.php?fm=1')
+    dict_['india-adjusted-nett-gross'] = tointeger(india_adj_nett_gross)
     
     india_nett_gross = val_in_soup(movie_soup, 'net_box_office.php')
+    dict_['india-nett-gross'] = tointeger(india_nett_gross)
     
-    india_gross = val_in_soup(movie_soup, 'india-total-gross.php')
+    fields = ['budget.php', 'india-first-day.php', 'india-first-weekend.php', 'india-first-week.php', 
+              'india-total-gross.php', 'india-distributor-share.php', 'worldwide-total-gross.php']
+    for field in fields:
+        field_val = val_in_soup(movie_soup, field)
+        dict_[field[:-4]] = field_val
     
-    india_disti_nett_gross = val_in_soup(movie_soup, 'india-distributor-share.php')
-    
-    india_adj_nett_gross = val_in_soup(movie_soup, 'india-adjusted-nett-gross.php?fm=1')
-    
-    world_gross = val_in_soup(movie_soup, 'worldwide-total-gross.php')
-    
-    rec = [movie_id, title, release_date, runtime, genre, screens, india_footfalls, 
-           budget, world_gross, india_gross, india_nett_gross, india_disti_nett_gross, india_adj_nett_gross, 
-           india_first_day, india_first_weekend, india_first_week]
-    movie_lst.append(rec)
-    
-    #print(movie_lst)
-        
+    movie_lst.append(dict_)
+       
     # Territory Consolidated Revenue Data
     dict_ = {'movie_id' : movie_id}
     for regn in regn_list:
@@ -189,75 +181,9 @@ for movie in movies[:5]:                                           # For now doi
         phrase = 'india-distributor-share.php?cityName=' + regn
         field = regn + '_dist_net_gross'
         dict_[field] = val_in_soup(movie_soup, phrase)
-        
-        
-    '''mumbai_nett_gross = val_in_soup(movie_soup, 'net_box_office.php?cityName=mumbai')
-    
-    mumbai_disti_nett_gross = val_in_soup(movie_soup, 'india-distributor-share.php?cityName=mumbai')
-
-    delhi_nett_gross = val_in_soup(movie_soup, 'net_box_office.php?cityName=delhi_up')
-    
-    delhi_disti_nett_gross = val_in_soup(movie_soup, 'india-distributor-share.php?cityName=delhi_up')
-
-    epunjab_nett_gross = val_in_soup(movie_soup, 'net_box_office.php?cityName=east_punjab')
-
-    epunjab_disti_nett_gross = val_in_soup(movie_soup, 'india-distributor-share.php?cityName=east_punjab')
-
-    rajasthan_nett_gross = val_in_soup(movie_soup, 'net_box_office.php?cityName=rajasthan')
-  
-    rajasthan_disti_nett_gross = val_in_soup(movie_soup, 'india-distributor-share.php?cityName=rajasthan')
-    
-    cpberar_nett_gross = val_in_soup(movie_soup, 'net_box_office.php?cityName=cp_berar')
- 
-    cpberar_disti_nett_gross = val_in_soup(movie_soup, 'india-distributor-share.php?cityName=cp_berar')
- 
-    ci_nett_gross = val_in_soup(movie_soup, 'net_box_office.php?cityName=ci')
-   
-    ci_disti_nett_gross = val_in_soup(movie_soup, 'india-distributor-share.php?cityName=ci')
-   
-    nizam_nett_gross = val_in_soup(movie_soup, 'net_box_office.php?cityName=nizam')
-   
-    nizam_disti_nett_gross = val_in_soup(movie_soup, 'india-distributor-share.php?cityName=nizam')
- 
-    mysore_nett_gross = val_in_soup(movie_soup, 'net_box_office.php?cityName=mysore')
-   
-    mysore_disti_nett_gross = val_in_soup(movie_soup, 'india-distributor-share.php?cityName=mysore')
-  
-    tnkerala_nett_gross = val_in_soup(movie_soup, 'net_box_office.php?cityName=tn_kerla')
- 
-    tnkerala_disti_nett_gross = val_in_soup(movie_soup, 'india-distributor-share.php?cityName=tn_kerla')
-
-    bihar_nett_gross = val_in_soup(movie_soup, 'net_box_office.php?cityName=bihar')
-  
-    bihar_disti_nett_gross = val_in_soup(movie_soup, 'india-distributor-share.php?cityName=bihar')
-   
-    wb_nett_gross = val_in_soup(movie_soup, 'net_box_office.php?cityName=west_bengal')
-
-    wb_disti_nett_gross = val_in_soup(movie_soup, 'india-distributor-share.php?cityName=west_bengal')
-
-    assam_nett_gross = val_in_soup(movie_soup, 'net_box_office.php?cityName=assam')
-
-    assam_disti_nett_gross = val_in_soup(movie_soup, 'india-distributor-share.php?cityName=assam')
- 
-    orrisa_nett_gross = val_in_soup(movie_soup, 'net_box_office.php?cityName=orrisa')
-  
-    orrisa_disti_nett_gross = val_in_soup(movie_soup, 'india-distributor-share.php?cityName=orrisa')
-
-    rec = [movie_id, mumbai_nett_gross, mumbai_disti_nett_gross, delhi_nett_gross, delhi_disti_nett_gross, 
-           epunjab_nett_gross, epunjab_disti_nett_gross, rajasthan_nett_gross, rajasthan_disti_nett_gross, 
-           cpberar_nett_gross, cpberar_disti_nett_gross, ci_nett_gross, ci_disti_nett_gross, 
-           nizam_nett_gross, nizam_disti_nett_gross, mysore_nett_gross, mysore_disti_nett_gross, 
-           tnkerala_nett_gross, tnkerala_disti_nett_gross, bihar_nett_gross, bihar_disti_nett_gross, 
-           wb_nett_gross, wb_disti_nett_gross, assam_nett_gross, assam_disti_nett_gross, 
-           orrisa_nett_gross, orrisa_disti_nett_gross]
-    regn_cons_lst.append(rec)
-    
-    print(regn_cons_lst)'''
     
     regn_cons_lst.append(dict_)
-    
-print(regn_cons_lst)
-    
+        
 #%% Step 3: For a movie from the list formed in Step 1, scrape all the weekly regional data.
 
 weeklies = movie_soup.find_all('a', href = re.compile('weekly-movies'))
@@ -272,7 +198,4 @@ for weekly in weeklies[:1]:                     # for now for one week
     
 
 #%% Scratch
-#print(weekly_url[69:])
-#print('week_report_india.php?type_key=' + weekly_url[69:] + '&cityName=mumbai')
-print(regn_cons_lst[1])
-print(len(regn_cons_lst))
+

@@ -43,6 +43,23 @@ for y in years:
 home = 'https://www.boxofficeindia.com/'
 nett_gross_url = home + 'india-total-nett-gross.php'
 
+cols = ['movie_id', 'title','release_date', 'runtime', 'genre', 'screens', 'india_footfalls', 
+        'budget', 'india-nett-gross', 'india-adjusted-nett-gross', 'india-first-day', 
+        'india-first-weekend', 'india-first-week', 'india-total-gross', 'india-distributor-share', 
+        'worldwide-total-gross']
+movie_df = pd.DataFrame(data = None, columns = cols)
+
+cols = ['movie_id', 'mumbai_net_gross', 'mumbai_dist_net_gross', 'delhi_up_net_gross', 
+        'delhi_up_dist_net_gross', 'east_punjab_net_gross', 'east_punjab_dist_net_gross', 
+        'rajasthan_net_gross', 'rajasthan_dist_net_gross', 'cp_berar_net_gross',
+       'cp_berar_dist_net_gross', 'ci_net_gross', 'ci_dist_net_gross',
+       'nizam_net_gross', 'nizam_dist_net_gross', 'mysore_net_gross',
+       'mysore_dist_net_gross', 'tn_kerla_net_gross', 'tn_kerla_dist_net_gross', 
+       'bihar_net_gross', 'bihar_dist_net_gross', 'west_bengal_net_gross', 
+       'west_bengal_dist_net_gross', 'assam_net_gross', 'assam_dist_net_gross', 
+       'orrisa_net_gross', 'orrisa_dist_net_gross']
+regn_cons_df = pd.DataFrame(data = None, columns = cols)
+
 regn_list = ['mumbai', 'delhi_up', 'east_punjab', 'rajasthan', 'cp_berar', 'ci', 
             'nizam', 'mysore', 'tn_kerla', 'bihar', 'west_bengal', 'assam', 'orrisa']
 year = 2000                                                         # For now doing it for only one year
@@ -157,12 +174,12 @@ for movie in movies[:1]:                                           # For now doi
     except AttributeError:
         dict_['india_footfalls'] = None
         
-    india_adj_nett_gross = val_in_soup(movie_soup, 'india-adjusted-nett-gross.php?fm=1')
-    dict_['india-adjusted-nett-gross'] = tointeger(india_adj_nett_gross)
-    
     india_nett_gross = val_in_soup(movie_soup, 'net_box_office.php')
     dict_['india-nett-gross'] = tointeger(india_nett_gross)
     
+    india_adj_nett_gross = val_in_soup(movie_soup, 'india-adjusted-nett-gross.php?fm=1')
+    dict_['india-adjusted-nett-gross'] = tointeger(india_adj_nett_gross)
+     
     fields = ['budget.php', 'india-first-day.php', 'india-first-weekend.php', 'india-first-week.php', 
               'india-total-gross.php', 'india-distributor-share.php', 'worldwide-total-gross.php']
     for field in fields:
@@ -184,6 +201,12 @@ for movie in movies[:1]:                                           # For now doi
     
     regn_cons_lst.append(dict_)
         
+#%% Step 2a: Writing the scraped data to a file
+movie_df = movie_df.append(movie_lst)
+regn_cons_df = regn_cons_df.append(regn_cons_lst)
+
+
+
 #%% Step 3: For a movie from the list formed in Step 1, scrape all the weekly regional data.
 
 weeklies = movie_soup.find_all('a', href = re.compile('weekly-movies'))
@@ -198,4 +221,3 @@ for weekly in weeklies[:1]:                     # for now for one week
     
 
 #%% Scratch
-

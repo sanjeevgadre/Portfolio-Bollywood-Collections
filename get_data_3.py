@@ -43,25 +43,21 @@ for y in years:
 home = 'https://www.boxofficeindia.com/'
 nett_gross_url = home + 'india-total-nett-gross.php'
 
-cols = ['movie_id', 'title','release_date', 'runtime', 'genre', 'screens', 'india_footfalls', 
+regn_lst = ['mumbai', 'delhi_up', 'east_punjab', 'rajasthan', 'cp_berar', 'ci', 
+            'nizam', 'mysore', 'tn_kerla', 'bihar', 'west_bengal', 'assam', 'orrisa']
+dict_ = {'region' : regn_lst, 'region-id' : range(1, len(regn_lst)+1)}
+regn_master = pd.DataFrame(data = dict_)
+
+cols = ['movie-id', 'title','release-date', 'runtime', 'genre', 'screens', 'india-footfalls', 
         'budget', 'india-nett-gross', 'india-adjusted-nett-gross', 'india-first-day', 
         'india-first-weekend', 'india-first-week', 'india-total-gross', 'india-distributor-share', 
         'worldwide-total-gross']
-movie_df = pd.DataFrame(data = None, columns = cols)
+movie_master = pd.DataFrame(data = None, columns = cols)
 
-cols = ['movie_id', 'mumbai_net_gross', 'mumbai_dist_net_gross', 'delhi_up_net_gross', 
-        'delhi_up_dist_net_gross', 'east_punjab_net_gross', 'east_punjab_dist_net_gross', 
-        'rajasthan_net_gross', 'rajasthan_dist_net_gross', 'cp_berar_net_gross',
-       'cp_berar_dist_net_gross', 'ci_net_gross', 'ci_dist_net_gross',
-       'nizam_net_gross', 'nizam_dist_net_gross', 'mysore_net_gross',
-       'mysore_dist_net_gross', 'tn_kerla_net_gross', 'tn_kerla_dist_net_gross', 
-       'bihar_net_gross', 'bihar_dist_net_gross', 'west_bengal_net_gross', 
-       'west_bengal_dist_net_gross', 'assam_net_gross', 'assam_dist_net_gross', 
-       'orrisa_net_gross', 'orrisa_dist_net_gross']
-regn_cons_df = pd.DataFrame(data = None, columns = cols)
+cols = ['movie-id', 'region-id', 'net-gross', 'dist-net-gross']
+regn_cons = pd.DataFrame(data = None, columns = cols)
 
-regn_lst = ['mumbai', 'delhi_up', 'east_punjab', 'rajasthan', 'cp_berar', 'ci', 
-            'nizam', 'mysore', 'tn_kerla', 'bihar', 'west_bengal', 'assam', 'orrisa']
+
 year = 2000                                                         # For now doing it for only one year
 
 param = {'year' : year}
@@ -126,7 +122,7 @@ movie_id = 0
 movie_lst = []
 regn_cons_lst = []
 
-for movie in movies[:1]:                                           # For now doing it for only one movie    
+for movie in movies[:5]:                                           # For now doing it for only one movie    
     movie_href = movie.get('href')
     movie_url = home + movie_href
     movie_html = requests.get(movie_url)
@@ -134,7 +130,7 @@ for movie in movies[:1]:                                           # For now doi
     
     movie_id += 1
     
-    dict_ = {'movie_id' : movie_id}
+    dict_ = {'movie-id' : movie_id}
     
     try:
         title = movie_soup.find('a', href = re.compile('movieid')).text
@@ -144,9 +140,9 @@ for movie in movies[:1]:                                           # For now doi
     
     try:
         release_date = movie_soup.find('span', class_ = 'redtext').text
-        dict_['release_date'] = str(release_date)
+        dict_['release-date'] = str(release_date)
     except AttributeError:
-        dict_['release_date'] = None
+        dict_['release-date'] = None
     
     try:
         runtime = movie_soup.find('a', href = re.compile('running-time.php')).next.next.next
@@ -170,9 +166,9 @@ for movie in movies[:1]:                                           # For now doi
     
     try:
         india_footfalls = movie_soup.find('a', href = re.compile('india-footfalls.php?')).find_next('td').find_next('td').text
-        dict_['india_footfalls'] = tointeger(india_footfalls)
+        dict_['india-footfalls'] = tointeger(india_footfalls)
     except AttributeError:
-        dict_['india_footfalls'] = None
+        dict_['india-footfalls'] = None
         
     india_nett_gross = val_in_soup(movie_soup, 'net_box_office.php')
     dict_['india-nett-gross'] = tointeger(india_nett_gross)
@@ -189,21 +185,21 @@ for movie in movies[:1]:                                           # For now doi
     movie_lst.append(dict_)
        
     # Territory Consolidated Revenue Data
-    dict_ = {'movie_id' : movie_id}
-    for regn in regn_lst:
+    for regn in regn_lst[:5]:
+        dict_= {'movie-id' : movie_id}
+        dict_['region-id'] = int(regn_master.loc[regn_master['region'] == regn, 'region-id'])
+        
         phrase = 'net_box_office.php?cityName=' + regn
-        field = regn + '_net_gross'
-        dict_[field] = val_in_soup(movie_soup, phrase)
+        dict_['net-gross'] = val_in_soup(movie_soup, phrase)
         
         phrase = 'india-distributor-share.php?cityName=' + regn
-        field = regn + '_dist_net_gross'
-        dict_[field] = val_in_soup(movie_soup, phrase)
-    
-    regn_cons_lst.append(dict_)
+        dict_['dist-net-gross'] = val_in_soup(movie_soup, phrase)
+        regn_cons_lst.append(dict_)
+        
         
 #%% Step 2a: Writing the scraped data to a file
-movie_df = movie_df.append(movie_lst)
-regn_cons_df = regn_cons_df.append(regn_cons_lst)
+movie_master = movie_master.append(movie_lst, ignore_index = True)
+regn_cons = regn_cons.append(regn_cons_lst, ignore_index = True)
 
 
 
@@ -226,4 +222,4 @@ for weekly in weeklies:                     # for now for one week
     
 
 #%% Scratch
-print(movie_weekly_lst)
+regn_master.loc[regn_master['region'] == regn, 'region-id'

@@ -7,7 +7,7 @@ Created on Tue May  5 09:01:57 2020
 """
 
 # %% Libraries
-import numpy as np
+import datetime
 import pandas as pd
 import requests
 import re
@@ -63,7 +63,7 @@ def val_in_soup(soup, string, tag = 'img'):
         except AttributeError:
             field = None
     else: 
-        field = weekly_soup.find('a', href = string).find_next('td').text
+        field = soup.find('a', href = string).find_next('td').text
         if field[:1] == '-':
             field = None
         else:
@@ -91,7 +91,7 @@ cols = ['movie-id', 'region-id', 'net-gross', 'dist-net-gross', 'week_1', 'week_
 weekly_master = pd.DataFrame(data = None, columns = cols)
 
 
-#%% Step 2: For a movie from the list formed in Step 1, populate movie_master. 
+#%% Step 2: For a movie from the list formed in Step 1, populate movie_master and weekly_master. 
 
 years = [2000]
 movie_id = 0
@@ -128,10 +128,11 @@ for year in years:
         
         try:
             release_date = movie_soup.find('span', class_ = 'redtext').text
-            dict_['release-date'] = str(release_date)
+            release_date = str(release_date).strip()    # Stripping leading and trailing whitespaces
+            dict_['release-date'] = datetime.datetime.strptime(release_date, '%d %b %Y')
         except AttributeError:
             dict_['release-date'] = None
-        
+                    
         try:
             runtime = movie_soup.find('a', href = re.compile('running-time.php')).next.next.next
             runtime = str(runtime)
@@ -176,53 +177,52 @@ for year in years:
         weeklies = movie_soup.find_all('a', href = re.compile('weekly-movies'))
         weekly_soup_lst = []
         
-        for weekly in weeklies[3:4]:
+        for weekly in weeklies:
             weekly_url = home + weekly.get('href')
             weekly_html = requests.get(weekly_url)
             weekly_soup = BeautifulSoup(weekly_html.content, 'html.parser')
             weekly_soup_lst.append(weekly_soup)
                 
-        # Territory Consolidated Revenue Data
+        # Territory Consolidated Revenue
         
-        '''for regn in regn_lst:
+        for regn in regn_lst:
             dict_= {'movie-id' : movie_id}
             dict_['region-id'] = int(regn_master.loc[regn_master['region'] == regn, 'region-id'])
             
+            # Regional total revenue
+            print(regn)
             phrase = 'net_box_office.php?cityName=' + regn
-            dict_['net-gross'] = val_in_soup(movie_soup, phrase)
+            foo = weekly_soup.find('a', href = phrase).next.next # returns either a bs4.element.Tag or a string
+            try:
+                if foo[:1] == '-':
+                    dict_['net-gross'] = None
+            except TypeError:
+                dict_['net-gross'] = val_in_soup(movie_soup, phrase)
             
+            # Regional total distributor reveune
             phrase = 'india-distributor-share.php?cityName=' + regn
-            dict_['dist-net-gross'] = val_in_soup(movie_soup, phrase)
+            foo = weekly_soup.find('a', href = phrase).next.next # returns either a bs4.element.Tag or a string
+            try:
+                if foo[:1] == '-':
+                    dict_['dist-net-gross'] = None
+            except TypeError:
+                dict_['dist-net-gross'] = val_in_soup(movie_soup, phrase)
             
+            # For weekly revenue for each region
             i = 4
             for w_soup in weekly_soup_lst:
                 phrase = 'week_report_india.php?type_key=' + weekly_master.columns[i] + '&cityName=' + regn
-                dict_[weekly_master.columns[i]] = val_in_soup(w_soup, phrase)
+                dict_[weekly_master.columns[i]] = val_in_soup(w_soup, phrase, tag = 'td')
                 i +=1
                       
-            weekly_lst.append(dict_)'''
+            weekly_lst.append(dict_)
     
-# %% Scratch
-# For consolidated revenue of a region
-phrase = 'net_box_office.php?cityName=orrisa'
-foo = weekly_soup.find('a', href = phrase).next.next # this returns either a bs4.element.Tag or a string
-try:
-    if foo[:1] == '-':
-        print('Revenue for the region is %s' % foo[:2])
-except TypeError:
-    print('Revenue for the region can me extracted using val_in_soup and tag img')
-
-# For weekly revenue of a region    
-phrase = 'week_report_india.php?type_key=week_4&cityName=bihar'
-print(weekly_soup.find('a', href = phrase).find_next('td').text)
-
-phrase = 'week_report_india.php?type_key=week_4&cityName=west_bengal'
-print(weekly_soup.find('a', href = phrase).find_next('td').text)
-
-
-
-#%% Step 3: Writing the scraped data to a file
+#%% Step 3: Writing the scraped data to a file and save the file to disk
 movie_master = movie_master.append(movie_lst, ignore_index = True)
 weekly_master = weekly_master.append(weekly_lst, ignore_index = True)
-    
+
+
+
+#%% Scratch
+weekly_master = pd.DataFrame(data = None)
 

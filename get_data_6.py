@@ -7,7 +7,7 @@ Created on Tue May  5 09:01:57 2020
 """
 
 # %% Libraries
-import datetime
+from datetime import datetime
 import pandas as pd
 import requests
 import re
@@ -71,7 +71,7 @@ def val_in_soup(soup, string, tag = 'img'):
             
     return field
 
-# %% Step 1: Find the top movies for a given year
+# %% Step 1: Setting up Parameters
 home = 'https://www.boxofficeindia.com/'
 nett_gross_url = home + 'india-total-nett-gross.php'
 
@@ -84,20 +84,19 @@ cols = ['movie-id', 'title','release-date', 'runtime', 'genre', 'screens', 'indi
         'budget', 'india-nett-gross', 'india-adjusted-nett-gross', 'india-first-day', 
         'india-first-weekend', 'india-first-week', 'india-total-gross', 'india-distributor-share', 
         'worldwide-total-gross']
-movie_master = pd.DataFrame(data = None, columns = cols)
+movie_master = pd.DataFrame(data = None, columns = cols, dtype = 'int')
 
 cols = ['movie-id', 'region-id', 'net-gross', 'dist-net-gross', 'week_1', 'week_2', 'week_3', 
         'week_4', 'week_5', 'week_6', 'week_7', 'week_8', 'week_9', 'week_ten', 'week_x11']
-weekly_master = pd.DataFrame(data = None, columns = cols)
+weekly_master = pd.DataFrame(data = None, columns = cols, dtype = 'int')
+
+years = [2010]
+movie_id = int(datetime.now().strftime('%y%m%d%H%M'))       # Setting up a unique movie_id seed for each run
 
 
-#%% Step 2: For a movie from the list formed in Step 1, populate movie_master and weekly_master. 
-
-years = [2000]
-movie_id = 0
-
+#%% Step 2: Scrapping Data for Each Year. 
 for year in years:
-    print('Now scrapping data for Year-%i' % year)
+    print('Now scraping data for Year-%i....' % year)
     
     param = {'year' : year}
     try:
@@ -118,60 +117,61 @@ for year in years:
         
         movie_id += 1
         
-        dict_ = {'movie-id' : movie_id}
+        movie_dict = {'movie-id' : movie_id}
         
         try:
             title = movie_soup.find('a', href = re.compile('movieid')).text
-            dict_['title'] = str(title)
+            movie_dict['title'] = str(title)
+            print('Now scraping data for %s....' % str(title))
         except AttributeError:
-            dict_['title'] = None
+            movie_dict['title'] = None
         
         try:
             release_date = movie_soup.find('span', class_ = 'redtext').text
             release_date = str(release_date).strip()    # Stripping leading and trailing whitespaces
-            dict_['release-date'] = datetime.datetime.strptime(release_date, '%d %b %Y')
+            movie_dict['release-date'] = datetime.strptime(release_date, '%d %b %Y')
         except AttributeError:
-            dict_['release-date'] = None
+            movie_dict['release-date'] = None
                     
         try:
             runtime = movie_soup.find('a', href = re.compile('running-time.php')).next.next.next
             runtime = str(runtime)
             runtime = runtime.replace('min', '')
-            dict_['runtime'] = int(runtime)
+            movie_dict['runtime'] = int(runtime)
         except AttributeError:
-            dict_['runtime'] = int(runtime)
+            movie_dict['runtime'] = int(runtime)
         
         try:
             genre = movie_soup.find('a', href = re.compile('genre.php')).text
-            dict_['genre'] = str(genre)
+            movie_dict['genre'] = str(genre)
         except AttributeError:
-            dict_['genre'] = None
+            movie_dict['genre'] = None
         
         try:
             screens = movie_soup.find('a', href = re.compile('screens.php')).find_next('td', class_ = 'td_cst_wd').text
-            dict_['screens'] = int(str(screens))
+            movie_dict['screens'] = int(str(screens))
         except AttributeError:
-            dict_['screens'] = None
+            movie_dict['screens'] = None
         
         try:
             india_footfalls = movie_soup.find('a', href = re.compile('india-footfalls.php?')).find_next('td').find_next('td').text
-            dict_['india-footfalls'] = tointeger(india_footfalls)
+            movie_dict['india-footfalls'] = tointeger(india_footfalls)
         except AttributeError:
-            dict_['india-footfalls'] = None
+            movie_dict['india-footfalls'] = None
             
         india_nett_gross = val_in_soup(movie_soup, 'net_box_office.php')
-        dict_['india-nett-gross'] = tointeger(india_nett_gross)
+        movie_dict['india-nett-gross'] = tointeger(india_nett_gross)
         
         india_adj_nett_gross = val_in_soup(movie_soup, 'india-adjusted-nett-gross.php?fm=1')
-        dict_['india-adjusted-nett-gross'] = tointeger(india_adj_nett_gross)
+        movie_dict['india-adjusted-nett-gross'] = tointeger(india_adj_nett_gross)
          
         fields = ['budget.php', 'india-first-day.php', 'india-first-weekend.php', 'india-first-week.php', 
                   'india-total-gross.php', 'india-distributor-share.php', 'worldwide-total-gross.php']
         for field in fields:
             field_val = val_in_soup(movie_soup, field)
-            dict_[field[:-4]] = field_val
+            movie_dict[field[:-4]] = field_val
         
-        movie_lst.append(dict_)
+        movie_lst.append(movie_dict)
         
         # Getting Weekly Data
         weeklies = movie_soup.find_all('a', href = re.compile('weekly-movies'))
@@ -186,36 +186,35 @@ for year in years:
         # Territory Consolidated Revenue
         
         for regn in regn_lst:
-            dict_= {'movie-id' : movie_id}
-            dict_['region-id'] = int(regn_master.loc[regn_master['region'] == regn, 'region-id'])
+            weekly_dict= {'movie-id' : movie_id}
+            weekly_dict['region-id'] = int(regn_master.loc[regn_master['region'] == regn, 'region-id'])
             
             # Regional total revenue
-            print(regn)
             phrase = 'net_box_office.php?cityName=' + regn
             foo = weekly_soup.find('a', href = phrase).next.next # returns either a bs4.element.Tag or a string
             try:
                 if foo[:1] == '-':
-                    dict_['net-gross'] = None
+                    weekly_dict['net-gross'] = None
             except TypeError:
-                dict_['net-gross'] = val_in_soup(movie_soup, phrase)
+                weekly_dict['net-gross'] = val_in_soup(movie_soup, phrase)
             
             # Regional total distributor reveune
             phrase = 'india-distributor-share.php?cityName=' + regn
             foo = weekly_soup.find('a', href = phrase).next.next # returns either a bs4.element.Tag or a string
             try:
                 if foo[:1] == '-':
-                    dict_['dist-net-gross'] = None
+                    weekly_dict['dist-net-gross'] = None
             except TypeError:
-                dict_['dist-net-gross'] = val_in_soup(movie_soup, phrase)
+                weekly_dict['dist-net-gross'] = val_in_soup(movie_soup, phrase)
             
             # For weekly revenue for each region
             i = 4
             for w_soup in weekly_soup_lst:
                 phrase = 'week_report_india.php?type_key=' + weekly_master.columns[i] + '&cityName=' + regn
-                dict_[weekly_master.columns[i]] = val_in_soup(w_soup, phrase, tag = 'td')
+                weekly_dict[weekly_master.columns[i]] = val_in_soup(w_soup, phrase, tag = 'td')
                 i +=1
                       
-            weekly_lst.append(dict_)
+            weekly_lst.append(weekly_dict)
     
 #%% Step 3: Writing the scraped data to a file and save the file to disk
 movie_master = movie_master.append(movie_lst, ignore_index = True)

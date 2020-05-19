@@ -94,8 +94,8 @@ weekly_master_cols = ['movie_id', 'region_id', 'net-gross', 'dist-net-gross', 'w
                       'week_9', 'week_ten', 'week_x11']
 
 # Years for which scraping is undertaken
-years = [x for x in range(2008, 2010, 1)]
-#years = [2002]
+years = [x for x in range(2018, 2020, 1)]
+#years = [2018]
 # Unique movie_id seed for each run
 movie_id = int(datetime.now().strftime('%y%m%d%H%M'))   
 
@@ -119,8 +119,8 @@ for year in years:
         # Get the movies of the year
         movies = year_soup.find_all('a', class_= 'anchormob')
     except ConnectionError:
-        print('Connection Error. Exiting')
-        exit 
+        print('Connection Error. Going to next year')
+        continue 
         
     movie_lst = []
     weekly_lst = []
@@ -131,8 +131,12 @@ for year in years:
         # Scrap details for movie_master                                             
         movie_href = movie.get('href')
         movie_url = home + movie_href
-        movie_html = requests.get(movie_url)
-        movie_soup = BeautifulSoup(movie_html.content, 'html.parser')
+        try:
+            movie_html = requests.get(movie_url)
+            movie_soup = BeautifulSoup(movie_html.content, 'html.parser')
+        except ConnectionError:
+            print('Connection Error for %s. Trying the next movie' % movie_url)
+            continue
         
         movie_id += 1
         movie_dict = {'movie_id' : movie_id}
@@ -174,9 +178,12 @@ for year in years:
         
         try:
             india_footfalls = movie_soup.find('a', href = re.compile('india-footfalls.php?')).find_next('td').find_next('td').text
-            movie_dict['india-footfalls'] = tointeger(india_footfalls)
+            if india_footfalls == '--':
+                movie_dict['india-footfalls'] = 0
+            else:
+                movie_dict['india-footfalls'] = tointeger(india_footfalls)
         except AttributeError:
-            movie_dict['india-footfalls'] = None
+            movie_dict['india-footfalls'] = 0
             
         india_nett_gross = val_in_soup(movie_soup, 'net_box_office.php')
         movie_dict['india-nett-gross'] = tointeger(india_nett_gross)
@@ -203,9 +210,13 @@ for year in years:
         # Scrap html for all the weeks
         for weekly in weeklies:
             weekly_url = home + weekly.get('href')
-            weekly_html = requests.get(weekly_url)
-            weekly_soup = BeautifulSoup(weekly_html.content, 'html.parser')
-            weekly_soup_lst.append(weekly_soup)
+            try:
+                weekly_html = requests.get(weekly_url)
+                weekly_soup = BeautifulSoup(weekly_html.content, 'html.parser')
+                weekly_soup_lst.append(weekly_soup)
+            except ConnectionError:
+                print('Connection Error for %s. Trying the next week' % weekly_url)
+                continue
                 
         # Loop - III: For each year, for each movie, for each region 
         for regn in region_master_cols:
@@ -252,12 +263,12 @@ for year in years:
     weekly_master = weekly_master.append(weekly_lst, ignore_index = True)
     
     '''When writing to hdf, it is important to set the width for columns containing strings to a value that will accomodate the largest possible size. Counter intutively the parameter is named min_itemsize''' 
-    
+       
     try:
         movie_master.to_hdf('./data/movie_master.h5', key = 'df', format = 'table', append = True, min_itemsize = {'title' : 100, 'release_date' : 11, 'genre' : 25})
         weekly_master.to_hdf('./data/weekly_master.h5', key = 'df', format = 'table', append = True)
     except ValueError:
-        print('Encountered ValueError when writing data for %s to string' % year)
+        print('Encountered ValueError when writing data for %s to disk' % year)
         continue
 
 #%% Scratch

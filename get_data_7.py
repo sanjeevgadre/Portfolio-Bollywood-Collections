@@ -10,7 +10,6 @@ Created on Tue May  5 09:01:57 2020
 import pandas as pd
 import requests
 import re
-import tables
 from bs4 import BeautifulSoup
 from datetime import datetime
 
@@ -76,49 +75,67 @@ def val_in_soup(soup, string, tag = 'img'):
 home = 'https://www.boxofficeindia.com/'
 nett_gross_url = home + 'india-total-nett-gross.php'
 
-regn_lst = ['mumbai', 'delhi_up', 'east_punjab', 'rajasthan', 'cp_berar', 'ci', 
-            'nizam', 'mysore', 'tn_kerla', 'bihar', 'west_bengal', 'assam', 'orrisa']
-dict_ = {'region' : regn_lst, 'region-id' : range(1, len(regn_lst)+1)}
-regn_master = pd.DataFrame(data = dict_)
+# regional_master dataframe
+region_master_cols = ['mumbai', 'delhi_up', 'east_punjab', 'rajasthan', 'cp_berar', 'ci', 
+                      'nizam', 'mysore', 'tn_kerla', 'bihar', 'west_bengal', 'assam', 
+                      'orrisa']
+d = {'region' : region_master_cols, 'region_id' : range(1, len(region_master_cols)+1)}
+region_master = pd.DataFrame(data = d)
 
-years = [2010, 2011]
-movie_id = int(datetime.now().strftime('%y%m%d%H%M'))   # Setting up a unique movie_id seed for each run
+# Columns for movie_master and weekly_master. The dataframe is setup later (repeatedly)
+movie_master_cols = ['movie_id', 'title','release_date', 'runtime', 'genre', 'screens', 
+                     'india-footfalls', 'budget', 'india-nett-gross', 
+                     'india-adjusted-nett-gross', 'india-first-day', 'india-first-weekend', 
+                     'india-first-week', 'india-total-gross', 'india-distributor-share', 
+                     'worldwide-total-gross']
+
+weekly_master_cols = ['movie_id', 'region_id', 'net-gross', 'dist-net-gross', 'week_1', 
+                      'week_2', 'week_3', 'week_4', 'week_5', 'week_6', 'week_7', 'week_8', 
+                      'week_9', 'week_ten', 'week_x11']
+
+# Years for which scraping is undertaken
+years = [x for x in range(2008, 2010, 1)]
+#years = [2002]
+# Unique movie_id seed for each run
+movie_id = int(datetime.now().strftime('%y%m%d%H%M'))   
 
 
-#%% Step 2: Scrapping Data for Each Year. 
+#%% Step 2: Scrapping Data
+
+# Loop - I: For each year of the run
 for year in years:
-    cols = ['movie-id', 'title','release-date', 'runtime', 'genre', 'screens', 'india-footfalls', 
-        'budget', 'india-nett-gross', 'india-adjusted-nett-gross', 'india-first-day', 
-        'india-first-weekend', 'india-first-week', 'india-total-gross', 'india-distributor-share', 
-        'worldwide-total-gross']
-    movie_master = pd.DataFrame(data = None, columns = cols, dtype = 'int')
-
-    cols = ['movie-id', 'region-id', 'net-gross', 'dist-net-gross', 'week_1', 'week_2', 'week_3', 
-        'week_4', 'week_5', 'week_6', 'week_7', 'week_8', 'week_9', 'week_ten', 'week_x11']
-    weekly_master = pd.DataFrame(data = None, columns = cols, dtype = 'int')
     
-    print('Now scraping data for Year-%i....' % year)
+    # movie_master and weekly_master dataframes are "renewed" for each year
+    movie_master = pd.DataFrame(data = None, columns = movie_master_cols, dtype = 'int')
+    weekly_master = pd.DataFrame(data = None, columns = weekly_master_cols, dtype = 'int')
+    
+    print('\nNow scraping data for Year-%i....' % year)
     
     param = {'year' : year}
     try:
         year_html = requests.get(nett_gross_url, params = param)
         year_soup = BeautifulSoup(year_html.content, 'html.parser')
-        movies = year_soup.find_all('a', class_= 'anchormob')     # Finds the top 50 movies for the year
+        
+        # Get the movies of the year
+        movies = year_soup.find_all('a', class_= 'anchormob')
     except ConnectionError:
+        print('Connection Error. Exiting')
         exit 
         
     movie_lst = []
     weekly_lst = []
-   
-    for movie in movies[-1:]:                                               
+    
+    # Loop - II: For each year, for each movie
+    for movie in movies:
+        
+        # Scrap details for movie_master                                             
         movie_href = movie.get('href')
         movie_url = home + movie_href
         movie_html = requests.get(movie_url)
         movie_soup = BeautifulSoup(movie_html.content, 'html.parser')
         
         movie_id += 1
-        
-        movie_dict = {'movie-id' : movie_id}
+        movie_dict = {'movie_id' : movie_id}
         
         try:
             title = movie_soup.find('a', href = re.compile('movieid')).text
@@ -129,10 +146,11 @@ for year in years:
         
         try:
             release_date = movie_soup.find('span', class_ = 'redtext').text
-            release_date = str(release_date).strip()    # Stripping leading and trailing whitespaces
-            movie_dict['release-date'] = release_date
+            # Stripping leading & trailing whitespaces
+            release_date = str(release_date).strip()
+            movie_dict['release_date'] = release_date
         except AttributeError:
-            movie_dict['release-date'] = None
+            movie_dict['release_date'] = None
                     
         try:
             runtime = movie_soup.find('a', href = re.compile('running-time.php')).next.next.next
@@ -166,33 +184,39 @@ for year in years:
         india_adj_nett_gross = val_in_soup(movie_soup, 'india-adjusted-nett-gross.php?fm=1')
         movie_dict['india-adjusted-nett-gross'] = tointeger(india_adj_nett_gross)
          
-        fields = ['budget.php', 'india-first-day.php', 'india-first-weekend.php', 'india-first-week.php', 
-                  'india-total-gross.php', 'india-distributor-share.php', 'worldwide-total-gross.php']
+        fields = ['budget.php', 'india-first-day.php', 'india-first-weekend.php', 
+                  'india-first-week.php', 'india-total-gross.php', 
+                  'india-distributor-share.php', 'worldwide-total-gross.php']
         for field in fields:
             field_val = val_in_soup(movie_soup, field)
             movie_dict[field[:-4]] = field_val
         
+        # Completed scrapimg details for movie_master
         movie_lst.append(movie_dict)
         
-        # Getting Weekly Data
+        ####
+
+        # Scrap details for weekly_master
         weeklies = movie_soup.find_all('a', href = re.compile('weekly-movies'))
         weekly_soup_lst = []
         
+        # Scrap html for all the weeks
         for weekly in weeklies:
             weekly_url = home + weekly.get('href')
             weekly_html = requests.get(weekly_url)
             weekly_soup = BeautifulSoup(weekly_html.content, 'html.parser')
             weekly_soup_lst.append(weekly_soup)
                 
-        # Territory Consolidated Revenue
-        
-        for regn in regn_lst:
-            weekly_dict= {'movie-id' : movie_id}
-            weekly_dict['region-id'] = int(regn_master.loc[regn_master['region'] == regn, 'region-id'])
+        # Loop - III: For each year, for each movie, for each region 
+        for regn in region_master_cols:
+            
+            weekly_dict= {'movie_id' : movie_id}
+            weekly_dict['region_id'] = int(region_master.loc[region_master['region'] == regn, 'region_id'])
             
             # Regional total revenue
             phrase = 'net_box_office.php?cityName=' + regn
-            foo = weekly_soup.find('a', href = phrase).next.next # returns either a bs4.element.Tag or a string
+            foo = weekly_soup.find('a', href = phrase).next.next 
+            # returns either a bs4.element.Tag or a string
             try:
                 if foo[:1] == '-':
                     weekly_dict['net-gross'] = 0
@@ -201,38 +225,43 @@ for year in years:
             
             # Regional total distributor reveune
             phrase = 'india-distributor-share.php?cityName=' + regn
-            foo = weekly_soup.find('a', href = phrase).next.next # returns either a bs4.element.Tag or a string
+            foo = weekly_soup.find('a', href = phrase).next.next 
+            # returns either a bs4.element.Tag or a string
             try:
                 if foo[:1] == '-':
                     weekly_dict['dist-net-gross'] = 0
             except TypeError:
                 weekly_dict['dist-net-gross'] = val_in_soup(movie_soup, phrase)
-                
-            # For weekly revenue for each region
-            i = 4
+            
+            i = 4   # Parameter for Loop IV
+            
+            # Loop - IV: For each year, for each movie, for each region, for each week soup
             for w_soup in weekly_soup_lst:
+                
                 phrase = 'week_report_india.php?type_key=' + weekly_master.columns[i] + '&cityName=' + regn
                 weekly_dict[weekly_master.columns[i]] = val_in_soup(w_soup, phrase, tag = 'td')
                 i +=1
                       
+            # Completed scraping details for weekly_master
             weekly_lst.append(weekly_dict)
             
-    movie_master = movie_master.append(movie_lst)
+            ####
+    
+    # Forming the dataframes and writing to disk
+    movie_master = movie_master.append(movie_lst, ignore_index = True)
     weekly_master = weekly_master.append(weekly_lst, ignore_index = True)
     
-    movie_master.set_index(keys = ['movie-id'], drop = True, verify_integrity = True, inplace = True)
-    weekly_master.set_index(keys = ['movie-id', 'region-id'], drop = True, verify_integrity = True, inplace = True)
+    '''When writing to hdf, it is important to set the width for columns containing strings to a value that will accomodate the largest possible size. Counter intutively the parameter is named min_itemsize''' 
     
-    movie_master.to_hdf('./data/movie_master.h5', key = 'df', format = 'table', append = True)
-    weekly_master.to_hdf('./data/weekly_master.h5', key = 'df', format = 'table', append = True)
-    
- 
-    
-
+    try:
+        movie_master.to_hdf('./data/movie_master.h5', key = 'df', format = 'table', append = True, min_itemsize = {'title' : 100, 'release_date' : 11, 'genre' : 25})
+        weekly_master.to_hdf('./data/weekly_master.h5', key = 'df', format = 'table', append = True)
+    except ValueError:
+        print('Encountered ValueError when writing data for %s to string' % year)
+        continue
 
 #%% Scratch
 
-movie_master.to_hdf('./data/movie_master.h5', key = 'df', format = 'table', append = True, data_columns = ['movie-id', 'genre'])
-
-foo = pd.read_hdf('./data/weekly_master.h5')
+foo = pd.read_hdf('./data/movie_master.h5')
+bar = pd.read_hdf('./data/weekly_master.h5')
 

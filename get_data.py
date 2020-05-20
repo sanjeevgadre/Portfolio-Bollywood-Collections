@@ -95,7 +95,7 @@ weekly_master_cols = ['movie_id', 'region_id', 'net-gross', 'dist-net-gross', 'w
 
 # Years for which scraping is undertaken
 years = [x for x in range(2018, 2020, 1)]
-#years = [2018]
+
 # Unique movie_id seed for each run
 movie_id = int(datetime.now().strftime('%y%m%d%H%M'))   
 
@@ -146,7 +146,7 @@ for year in years:
             movie_dict['title'] = str(title)
             print('Now scraping data for %s....' % str(title))
         except AttributeError:
-            movie_dict['title'] = None
+            movie_dict['title'] = ''
         
         try:
             release_date = movie_soup.find('span', class_ = 'redtext').text
@@ -154,7 +154,7 @@ for year in years:
             release_date = str(release_date).strip()
             movie_dict['release_date'] = release_date
         except AttributeError:
-            movie_dict['release_date'] = None
+            movie_dict['release_date'] = ''
                     
         try:
             runtime = movie_soup.find('a', href = re.compile('running-time.php')).next.next.next
@@ -162,19 +162,19 @@ for year in years:
             runtime = runtime.replace('min', '')
             movie_dict['runtime'] = int(runtime)
         except AttributeError:
-            movie_dict['runtime'] = int(runtime)
+            movie_dict['runtime'] = 0
         
         try:
             genre = movie_soup.find('a', href = re.compile('genre.php')).text
             movie_dict['genre'] = str(genre)
         except AttributeError:
-            movie_dict['genre'] = None
+            movie_dict['genre'] = ''
         
         try:
             screens = movie_soup.find('a', href = re.compile('screens.php')).find_next('td', class_ = 'td_cst_wd').text
             movie_dict['screens'] = int(str(screens))
         except AttributeError:
-            movie_dict['screens'] = None
+            movie_dict['screens'] = ''
         
         try:
             india_footfalls = movie_soup.find('a', href = re.compile('india-footfalls.php?')).find_next('td').find_next('td').text
@@ -186,10 +186,12 @@ for year in years:
             movie_dict['india-footfalls'] = 0
             
         india_nett_gross = val_in_soup(movie_soup, 'net_box_office.php')
-        movie_dict['india-nett-gross'] = tointeger(india_nett_gross)
+        movie_dict['india-nett-gross'] = india_nett_gross
+        #movie_dict['india-nett-gross'] = tointeger(india_nett_gross)
         
         india_adj_nett_gross = val_in_soup(movie_soup, 'india-adjusted-nett-gross.php?fm=1')
-        movie_dict['india-adjusted-nett-gross'] = tointeger(india_adj_nett_gross)
+        movie_dict['india-adjusted-nett-gross'] = india_adj_nett_gross
+        #movie_dict['india-adjusted-nett-gross'] = tointeger(india_adj_nett_gross)
          
         fields = ['budget.php', 'india-first-day.php', 'india-first-weekend.php', 
                   'india-first-week.php', 'india-total-gross.php', 
@@ -271,8 +273,4 @@ for year in years:
         print('Encountered ValueError when writing data for %s to disk' % year)
         continue
 
-#%% Scratch
-
-foo = pd.read_hdf('./data/movie_master.h5')
-bar = pd.read_hdf('./data/weekly_master.h5')
-
+print("\nFinished the run")

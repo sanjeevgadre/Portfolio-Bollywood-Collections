@@ -16,6 +16,7 @@ movie_master = pd.read_hdf('./data/movie_master.h5', key = 'df')
 # Re-index movie_master to get unique index values
 movie_master.reset_index(drop = True, inplace = True)
 
+
 # Extract revenue adjustment factor. The revenue adjustment factor adjusts historical revenue to its equivalent current value
 movie_master['rev_adj_factor'] = movie_master.apply(lambda x: x['india-adjusted-nett-gross']/x['india-nett-gross'], axis = 1)
 
@@ -43,7 +44,22 @@ for i in range(len(movie_master)):
         base_year = base_year + incr
         movie_master.loc[i, 'release_interval'] = intrvl
         
+'''
+During data download it was noticed that some movies were missing values for 'india-footfalls' and value 0 was imputed. We now impute a more appropriate value as follows:
+    Calculate the mean ratio for 'india-footfalls'/'india-net-gross' for all movies in the same year as the movies with missing 'india-fooftalls' value.
+    Use this ratio to impute a more appropriate value for movies with 'missing india-footfalls' '''
+
+# Identify years with movies reportng 0 footfalls
+zero_years = movie_master.query('`india-footfalls` == 0').loc[:, 'release_year'].drop_duplicates().tolist()
+
+# Imputing the missing footfalls values
+for year in zero_years:
+    df = movie_master.query('release_year == @year and `india-footfalls` != 0').loc[:, ['india-nett-gross', 'india-footfalls']]
+    df['ff_to_gross'] = df.apply(lambda x: x['india-footfalls']/x['india-nett-gross'], axis = 1)
+    mean_ff_to_gross = df['ff_to_gross'].mean()
+    df = movie_master.query('release_year == @year and `india-footfalls` == 0')
+    for idx in df.index:
+        movie_master.loc[idx, 'india-footfalls'] = movie_master.loc[idx, 'india-nett-gross'] * mean_ff_to_gross
+        
 # Save the enriched movie_master file
 movie_master.to_pickle('./data/movie_master_en.pkl')
-
-

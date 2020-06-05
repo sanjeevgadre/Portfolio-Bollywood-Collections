@@ -19,8 +19,21 @@ df = movie_master.groupby(['release_year'])['india-adjusted-nett-gross'].sum()
 
 plt.figure(figsize = (13, 5))
 plt.plot(df.index, df/1000000000)
-plt.title('# Total revenues for the top 50 films of the year adjusted for inflation', fontweight = 'bold')
+plt.title('Total revenues for the top 50 films of the year adjusted for inflation', fontweight = 'bold')
 plt.ylabel('Rupees in billions')
+plt.xlabel('Year of Release')
+plt.xticks(np.arange(1994, 2020, 1), rotation = 45)
+plt.grid(True)
+plt.show()
+
+# Total footfalls for the top 50 films of the year
+df = movie_master.groupby(['release_year'])['india-footfalls'].sum()
+
+plt.figure(figsize = (13, 5))
+plt.plot(df.index, df/1000000000)
+plt.title('Total footfalls for the top 50 films of the year', fontweight = 'bold')
+plt.ylabel('Footfalls in billions')
+plt.ylim(0, 0.5)
 plt.xlabel('Year of Release')
 plt.xticks(np.arange(1994, 2020, 1), rotation = 45)
 plt.grid(True)
@@ -37,7 +50,19 @@ plt.ylabel('Returns in %')
 plt.ylim(-70, 125)
 plt.xlabel('Year of Release')
 plt.xticks(np.arange(1994, 2020, 1), rotation = 45)
-plt.legend()
+plt.legend(loc = 'upper center')
+plt.grid(True)
+plt.show()
+
+# Median number of screens a film opens in
+df = movie_master.groupby(['release_year'])['screens'].median()
+
+plt.figure(figsize = (13, 5))
+plt.plot(df.index, df)
+plt.title('Median number of screens a film opens in', fontweight = 'bold')
+plt.ylabel('# Screens')
+plt.xlabel('Year of Release')
+plt.xticks(np.arange(1994, 2020, 1), rotation = 45)
 plt.grid(True)
 plt.show()
 

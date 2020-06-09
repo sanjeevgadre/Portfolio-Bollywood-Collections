@@ -12,16 +12,16 @@ from datetime import datetime
 
 #%% Enriching the movie_master
 movie_master = pd.read_hdf('./data/movie_master.h5', key = 'df')
+cpi_master = pd.read_csv('./data/CPI.csv')
 
 # Re-index movie_master to get unique index values
 movie_master.reset_index(drop = True, inplace = True)
 
-
-# Extract revenue adjustment factor. The revenue adjustment factor adjusts historical revenue to its equivalent current value
+'''# Extract revenue adjustment factor. The revenue adjustment factor adjusts historical revenue to its equivalent current value
 movie_master['rev_adj_factor'] = movie_master.apply(lambda x: x['india-adjusted-nett-gross']/x['india-nett-gross'], axis = 1)
 
 # Compute return on budget
-movie_master['ret_on_budget'] = movie_master.apply(lambda x: x['india-nett-gross']/x['budget'], axis = 1)
+movie_master['ret_on_budget'] = movie_master.apply(lambda x: x['india-nett-gross']/x['budget'], axis = 1)'''
 
 # Extract release_year from release_date
 movie_master['release_year'] = movie_master['release_date'].apply(lambda x: datetime.strptime(x, '%d %b %Y').year)
@@ -43,7 +43,7 @@ for i in range(len(movie_master)):
         intrvl = intrvl + 1
         base_year = base_year + incr
         movie_master.loc[i, 'release_interval'] = intrvl
-        
+               
 '''
 During data download it was noticed that some movies were missing values for 'india-footfalls' and value 0 was imputed. We now impute a more appropriate value as follows:
     Calculate the mean ratio for 'india-footfalls'/'india-net-gross' for all movies in the same year as the movies with missing 'india-fooftalls' value.
@@ -60,6 +60,9 @@ for year in zero_years:
     df = movie_master.query('release_year == @year and `india-footfalls` == 0')
     for idx in df.index:
         movie_master.loc[idx, 'india-footfalls'] = movie_master.loc[idx, 'india-nett-gross'] * mean_ff_to_gross
+        
+# Get the CPI (inflation index) value for each film
+movie_master['cpi'] = [cpi_master.query('Year == @x')['CPI'].item() for x in movie_master['release_year']]
         
 # Save the enriched movie_master file
 movie_master.to_pickle('./data/movie_master_en.pkl')

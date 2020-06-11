@@ -32,6 +32,9 @@ movie_master['release_week'] = movie_master['release_date'].apply(lambda x: date
 # Extract release_month from release_date
 movie_master['release_month'] = movie_master['release_date'].apply(lambda x: datetime.strptime(x, '%d %b %Y').month)
 
+# Convert genre to categorical data
+movie_master['genre'] = movie_master['genre'].astype('category')
+
 # We divide the period 1994 to 2019 into intervals of 3 years (the final interval will have only 2 years). We assign a movie to an appropriate year_interval based on its release_year.
 base_year = 1994
 incr = 3
@@ -61,8 +64,8 @@ for year in zero_years:
     for idx in df.index:
         movie_master.loc[idx, 'india-footfalls'] = movie_master.loc[idx, 'india-nett-gross'] * mean_ff_to_gross
         
-# Get the CPI (inflation index) value for each film
-movie_master['cpi'] = [cpi_master.query('Year == @x')['CPI'].item() for x in movie_master['release_year']]
+'''# Get the CPI (inflation index) value for each film
+movie_master['cpi'] = [cpi_master.query('Year == @x')['CPI'].item() for x in movie_master['release_year']]'''
         
 # Save the enriched movie_master file
 movie_master.to_pickle('./data/movie_master_en.pkl')

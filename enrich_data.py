@@ -26,16 +26,18 @@ movie_master['ret_on_budget'] = movie_master.apply(lambda x: x['india-nett-gross
 # Extract release_year from release_date
 movie_master['release_year'] = movie_master['release_date'].apply(lambda x: datetime.strptime(x, '%d %b %Y').year)
 
-# Extract release_week from release_date
+# Extract release_week from release_date and convert release_week to categorical data
 movie_master['release_week'] = movie_master['release_date'].apply(lambda x: datetime.strptime(x, '%d %b %Y').strftime('%V'))
+movie_master['release_week'] = movie_master['release_week'].astype('category')
 
-# Extract release_month from release_date
+# Extract release_month from release_date and convert release_month to categorical data
 movie_master['release_month'] = movie_master['release_date'].apply(lambda x: datetime.strptime(x, '%d %b %Y').month)
+movie_master['release_month'] = movie_master['release_month'].astype('category')
 
 # Convert genre to categorical data
 movie_master['genre'] = movie_master['genre'].astype('category')
 
-# We divide the period 1994 to 2019 into intervals of 3 years (the final interval will have only 2 years). We assign a movie to an appropriate year_interval based on its release_year.
+# We divide the period 1994 to 2019 into intervals of 3 years (the final interval will have only 2 years). We assign a movie to an appropriate year_interval based on its release_year. Finally we convert the release_interval data type to int
 base_year = 1994
 incr = 3
 intrvl = 1
@@ -46,6 +48,7 @@ for i in range(len(movie_master)):
         intrvl = intrvl + 1
         base_year = base_year + incr
         movie_master.loc[i, 'release_interval'] = intrvl
+movie_master['release_interval'] = movie_master['release_interval'].astype('int')
                
 '''
 During data download it was noticed that some movies were missing values for 'india-footfalls' and value 0 was imputed. We now impute a more appropriate value as follows:

@@ -82,6 +82,9 @@ region_master_cols = ['mumbai', 'delhi_up', 'east_punjab', 'rajasthan', 'cp_bera
 d = {'region' : region_master_cols, 'region_id' : range(1, len(region_master_cols)+1)}
 region_master = pd.DataFrame(data = d)
 
+# Saving region_master
+region_master.to_hdf('./data/region_master.h5', key = 'df', format = 'table', append = True)
+
 # Columns for movie_master and weekly_master. The dataframe is setup later (repeatedly)
 movie_master_cols = ['movie_id', 'title','release_date', 'runtime', 'genre', 'screens', 
                      'india-footfalls', 'budget', 'india-nett-gross', 

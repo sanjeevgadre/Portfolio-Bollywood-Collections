@@ -13,7 +13,8 @@ import numpy as np
 
 #%% Exploratory Data Analysis
 movie_master = pd.read_pickle('./data/movie_master_en.pkl')
-#weekly_master = pd.read_hdf('./data/weekly_master.h5', key = 'df')
+weekly_master = pd.read_hdf('./data/weekly_master.h5', key = 'df')
+region_master = pd.read_hdf('./data/region_master.h5', key = 'df')
 
 #%% Revenues
 
@@ -102,8 +103,8 @@ ax[1].set_ylabel('Footfalls in millions', fontsize = 14)
 ax[2].set_ylabel('Share in %', fontsize = 14)
 
 ax[2].set_xlabel('Year of Release', fontsize = 14)
-ax[2].set_xticks(np.arange(1994, 2020, 1))
-ax[2].set_xticklabels(np.arange(1994, 2020, 1), rotation = 45, fontsize = 8)
+ax[2].set_xticks(years)
+ax[2].set_xticklabels(years, rotation = 45, fontsize = 8)
 
 # Save before you Show. Show "creates" a new figure.
 plt.savefig('./figs/footfalls.jpg', dpi = 'figure')
@@ -154,8 +155,8 @@ ax[1].set_ylabel('Rupees in billions', fontsize = 14)
 ax[2].set_ylabel('Share in %', fontsize = 14)
 
 ax[2].set_xlabel('Year of Release', fontsize = 14)
-ax[2].set_xticks(np.arange(1994, 2020, 1))
-ax[2].set_xticklabels(np.arange(1994, 2020, 1), rotation = 45, fontsize = 8)
+ax[2].set_xticks(years)
+ax[2].set_xticklabels(years, rotation = 45, fontsize = 8)
 
 # Save before you Show. Show "creates" a new figure.
 plt.savefig('./figs/budget.jpg', dpi = 'figure')
@@ -175,16 +176,15 @@ plt.close()
 
 fig, ax = plt.subplots(nrows = 2, sharex = 'col', figsize = (10, 8))
 
-intervals = movie_master['release_interval'].unique().astype('int')
+years = movie_master['release_year'].unique()
 col_names = ['Median: All', 'Median: Top Half', 'Median: Bottom Half']
-df = pd.DataFrame(data = None, index = intervals, columns = col_names)
-for interval in intervals:
-    s = movie_master.query('release_interval == @interval').loc[:, ['india-total-gross', 'screens']]
-    s.sort_values(by = ['india-total-gross'], inplace = True, ascending = False, 
-                  ignore_index = True)
+df = pd.DataFrame(data = None, index = years, columns = col_names)
+for year in years:
+    s = movie_master.query('release_year == @year').loc[:, ['india-total-gross', 'screens']]
+    s.reset_index(drop = True, inplace = True)
     s = s['screens']
     mid = int(len(s)/2)
-    df.loc[df.index == interval, col_names] = [s.median(), s[:mid].median(), s[mid:].median()]
+    df.loc[df.index == year, col_names] = [s.median(), s[:mid].median(), s[mid:].median()]
 
 ax[0].plot(df.index, df['Median: All'])
 
@@ -195,17 +195,15 @@ for i in range(len(ax)):
     ax[i].grid()
     ax[i].legend()
 
-ax[0].set_title('Median no. of release screens for top films in 3 year time intervals', fontweight = 'bold')
-ax[1].set_title('Median no. of release screens for top films in 3 year time intervals - Stratified by Total Gross Revenue', fontweight = 'bold')
+ax[0].set_title('Median no. of release screens for top films of the year', fontweight = 'bold')
+ax[1].set_title('Median no. of release screens for top films of the year - Stratified by Total Gross Revenue', fontweight = 'bold')
 
 ax[0].set_ylabel('Number of screens', fontsize = 14)
 ax[1].set_ylabel('Number of screens', fontsize = 14)
 
 ax[1].set_xlabel('Year of Release', fontsize = 14)
-ax[1].set_xticks(np.arange(1, 10, 1))
-ax[1].set_xticklabels(['1994-1996', '1997-1999', '2000-2002', '2003-2005', '2006-2008', 
-                       '2009-2011', '2012-2014', '2015-17', '2018-2019'], rotation = 45, 
-                      fontsize = 8)
+ax[1].set_xticks(years)
+ax[1].set_xticklabels(years, rotation = 45, fontsize = 8)
 
 # Save before you Show. Show "creates" a new figure.
 plt.savefig('./figs/screens.jpg', dpi = 'figure')
@@ -213,28 +211,27 @@ plt.savefig('./figs/screens.jpg', dpi = 'figure')
 plt.show()
 plt.close()
 
-### The median number of release screens have expanded from ~158 in 1994-197 to 1925 in 2018-19, a CAGR of 11% 
+### The median number of release screens have expanded from 140 in 1994 to 2325 in 2018-19, a CAGR of ~11.41% 
 
 ### Median number of release screens for films with total gross revenue
-    ### above the median, expanded from 190 in 1994 to 2975 in 2019
-    ### below the median, expanded from 130 in 1994 to 1425 in 2019
+    ### above the median, expanded from 170 in 1994 to 3100 in 2019
+    ### below the median, expanded from 135 in 1994 to 1500 in 2019
     
-### In 1994-97, films grossing above the median had opened at ~50% more number of screens than films grossing below the median. In 2018-19 that number is ~109%.
+### In 1994, films grossing above the median had opened at ~26% more number of screens than films grossing below the median. In 2018-19 that number is ~107%.
 
 #%% Runtime
 
 fig, ax = plt.subplots(nrows = 2, sharex = 'col', figsize = (10, 8))
 
-intervals = movie_master['release_interval'].unique().astype('int')
+years = movie_master['release_year'].unique()
 col_names = ['Median: All', 'Median: Top Half', 'Median: Bottom Half']
-df = pd.DataFrame(data = None, index = intervals, columns = col_names)
-for interval in intervals:
-    s = movie_master.query('release_interval == @interval').loc[:, ['india-total-gross', 'runtime']]
-    s.sort_values(by = ['india-total-gross'], inplace = True, ascending = False, 
-                  ignore_index = True)
+df = pd.DataFrame(data = None, index = years, columns = col_names)
+for year in years:
+    s = movie_master.query('release_year == @year').loc[:, ['india-total-gross', 'runtime']]
+    s.reset_index(drop = True, inplace = True)
     s = s['runtime']
     mid = int(len(s)/2)
-    df.loc[df.index == interval, col_names] = [s.median(), s[:mid].median(), s[mid:].median()]
+    df.loc[df.index == year, col_names] = [s.median(), s[:mid].median(), s[mid:].median()]
 
 ax[0].plot(df.index, df['Median: All'])
 
@@ -245,17 +242,15 @@ for i in range(len(ax)):
     ax[i].grid()
     ax[i].legend()
 
-ax[0].set_title('Median runtime for top films in 3 year time intervals', fontweight = 'bold')
-ax[1].set_title('Median runtime for top films in 3 year time intervals - Stratified by Total Gross Revenue', fontweight = 'bold')
+ax[0].set_title('Median runtime for top films of the year', fontweight = 'bold')
+ax[1].set_title('Median runtime for top films of the year - Stratified by revenue', fontweight = 'bold')
 
 ax[0].set_ylabel('Runtime in minutes', fontsize = 14)
 ax[1].set_ylabel('Runtime in minutes', fontsize = 14)
 
 ax[1].set_xlabel('Year of Release', fontsize = 14)
-ax[1].set_xticks(np.arange(1, 10, 1))
-ax[1].set_xticklabels(['1994-1996', '1997-1999', '2000-2002', '2003-2005', '2006-2008', 
-                       '2009-2011', '2012-2014', '2015-17', '2018-2019'], rotation = 45, 
-                      fontsize = 8)
+ax[1].set_xticks(years)
+ax[1].set_xticklabels(years, rotation = 45, fontsize = 8)
 
 # Save before you Show. Show "creates" a new figure.
 plt.savefig('./figs/runtime.jpg', dpi = 'figure')
@@ -263,28 +258,27 @@ plt.savefig('./figs/runtime.jpg', dpi = 'figure')
 plt.show()
 plt.close()
 
-### The median runtime has contracted from ~156 mins. in 1994-97 to 139 mins. in 2018-19, a drop of 17 minutes or ~10% 
+### The median runtime has contracted from 156 mins. in 1994 to 140 mins. in 2019, a drop of 16 minutes or ~10% 
 
 ### Median number of release screens for films with total gross revenue
-    ### above the median, contracted from 160 mins. in 1994 to 141 mins in 2019, a drop of 19 mins. or ~12%
-    ### below the median, contracted from 152 mins. in 1994 to 139 mins in 2019, a drop of 13 mins. or ~9%
+    ### above the median, contracted from 161 mins. in 1994 to 146 mins in 2019, a drop of 15 mins. or ~9%
+    ### below the median, contracted from 152 mins. in 1994 to 134 mins in 2019, a drop of 18 mins. or ~12%
     
 ### Over the 26 year period, films have shortened in runtime by about 10%. This shortening is minimally different for more-successful and less-successful films.
 
-#%% Distributor's Share
+#%% Distributors' share
 
 fig, ax = plt.subplots(nrows = 2, sharex = 'col', figsize = (10, 8))
 
-intervals = movie_master['release_interval'].unique().astype('int')
+years = movie_master['release_year'].unique()
 col_names = ['Median: All', 'Median: Top Half', 'Median: Bottom Half']
-df = pd.DataFrame(data = None, index = intervals, columns = col_names)
-for interval in intervals:
-    s = movie_master.query('release_interval == @interval').loc[:, ['india-total-gross', 'india-distributor-share']]
-    s.sort_values(by = ['india-total-gross'], inplace = True, ascending = False, 
-                  ignore_index = True)
+df = pd.DataFrame(data = None, index = years, columns = col_names)
+for year in years:
+    s = movie_master.query('release_year == @year').loc[:, ['india-total-gross', 'india-distributor-share']]
+    s.reset_index(drop = True, inplace = True)
     s = s['india-distributor-share']/s['india-total-gross']
     mid = int(len(s)/2)
-    df.loc[df.index == interval, col_names] = [s.median(), s[:mid].median(), s[mid:].median()]
+    df.loc[df.index == year, col_names] = [s.median(), s[:mid].median(), s[mid:].median()]
 
 ax[0].plot(df.index, df['Median: All']*100)
 
@@ -295,17 +289,15 @@ for i in range(len(ax)):
     ax[i].grid()
     ax[i].legend()
 
-ax[0].set_title("Distributors' share of total gross for top films in 3 year time intervals", fontweight = 'bold')
-ax[1].set_title("Distributors' share of total gross for top films in 3 year time intervals - Stratified by Total Gross Revenue", fontweight = 'bold')
+ax[0].set_title("Distributors' share of total gross for top films of the year", fontweight = 'bold')
+ax[1].set_title("Distributors' share of total gross for top films of the year - Stratified by Total Gross Revenue", fontweight = 'bold')
 
 ax[0].set_ylabel('Share in Percentage', fontsize = 14)
 ax[1].set_ylabel('Share in Percentage', fontsize = 14)
 
 ax[1].set_xlabel('Year of Release', fontsize = 14)
-ax[1].set_xticks(np.arange(1, 10, 1))
-ax[1].set_xticklabels(['1994-1996', '1997-1999', '2000-2002', '2003-2005', '2006-2008', 
-                       '2009-2011', '2012-2014', '2015-17', '2018-2019'], rotation = 45, 
-                      fontsize = 8)
+ax[1].set_xticks(years)
+ax[1].set_xticklabels(years, rotation = 45, fontsize = 8)
 
 # Save before you Show. Show "creates" a new figure.
 plt.savefig('./figs/disti_share.jpg', dpi = 'figure')
@@ -313,30 +305,29 @@ plt.savefig('./figs/disti_share.jpg', dpi = 'figure')
 plt.show()
 plt.close()
 
-### The median distributors' share has expanded from ~29% in 1994-97 to 38% in 2018-19, an increase of 9 percentage points 
+### The median distributors' share has expanded from ~25% in 1994 to ~39% in 2019, an increase of 14 percentage points 
 
 ### Median distributors' share for films with total gross revenue
-    ### above the median, expanded from ~30% in 1994 to ~39% in 2019, an increase of 9 percentage points
-    ### below the median, expanded from ~25% in 1994 to ~37% in 2019, an increase of 12 percentage points
+    ### above the median, expanded from ~29% in 1994 to ~40% in 2019, an increase of 11 percentage points
+    ### below the median, expanded from ~23% in 1994 to ~39% in 2019, an increase of 16 percentage points
     
-### Over the 26 year period, distributors' share of total gross has significantly increased. Since around 2009, distributors are commanding the same share of a film's total gross irrespecive of how successful the film is. This isn't true of the period from 1994 to 2008, when the more successful films were parting with a much larger share of their total gross than the less successful films. One could draw possibly two conclusions:
-    ### In recent times, a film has very little leverage in determining the distributors' share of the total gross
-    ### In recent times, a distributors' share likely has no impact on a film's fortunes. That is starkly different from what is observerd in the earlier times.
-    
+### Over the 26 year period, distributors' share of total gross has significantly increased. Since around 2010, distributors are commanding the same share of a film's total gross irrespecive of how successful the film is. This isn't true of the period from 1994 to 2009, when the more successful films were parting with a much larger share of their total gross than the less successful films. One could draw possibly two conclusions:
+    ### In recent times, a film has very little leverage in determining the distributors' share of the total gross.
+    ### In recent times, a distributors' share likely has no impact on a film's fortunes. That is different from likely happened in the earlier times.
+
 #%% First Week Revenue
 
 fig, ax = plt.subplots(nrows = 2, sharex = 'col', figsize = (10, 8))
 
-intervals = movie_master['release_interval'].unique().astype('int')
+years = movie_master['release_year'].unique()
 col_names = ['Median: All', 'Median: Top Half', 'Median: Bottom Half']
-df = pd.DataFrame(data = None, index = intervals, columns = col_names)
-for interval in intervals:
-    s = movie_master.query('release_interval == @interval').loc[:, ['india-total-gross', 'india-first-week']]
-    s.sort_values(by = ['india-total-gross'], inplace = True, ascending = False, 
-                  ignore_index = True)
+df = pd.DataFrame(data = None, index = years, columns = col_names)
+for year in years:
+    s = movie_master.query('release_year == @year').loc[:, ['india-total-gross', 'india-first-week']]
+    s.reset_index(inplace = True, drop = True)
     s = s['india-first-week']/s['india-total-gross']
     mid = int(len(s)/2)
-    df.loc[df.index == interval, col_names] = [s.median(), s[:mid].median(), s[mid:].median()]
+    df.loc[df.index == year, col_names] = [s.median(), s[:mid].median(), s[mid:].median()]
 
 ax[0].plot(df.index, df['Median: All']*100)
 
@@ -347,17 +338,15 @@ for i in range(len(ax)):
     ax[i].grid()
     ax[i].legend()
 
-ax[0].set_title("First week gross as % of total gross for top films in 3 year time intervals", fontweight = 'bold')
-ax[1].set_title("First week gross as % of total gross for top films in 3 year time intervals - Stratified by Total Gross Revenue", fontweight = 'bold')
+ax[0].set_title("First week gross as % of total gross for top films of the year", fontweight = 'bold')
+ax[1].set_title("First week gross as % of total gross for top films of the year - Stratified by Total Gross Revenue", fontweight = 'bold')
 
 ax[0].set_ylabel('Share in Percentage', fontsize = 14)
 ax[1].set_ylabel('Share in Percentage', fontsize = 14)
 
 ax[1].set_xlabel('Year of Release', fontsize = 14)
-ax[1].set_xticks(np.arange(1, 10, 1))
-ax[1].set_xticklabels(['1994-1996', '1997-1999', '2000-2002', '2003-2005', '2006-2008', 
-                       '2009-2011', '2012-2014', '2015-17', '2018-2019'], rotation = 45, 
-                      fontsize = 8)
+ax[1].set_xticks(years)
+ax[1].set_xticklabels(years, rotation = 45, fontsize = 8)
 
 # Save before you Show. Show "creates" a new figure.
 plt.savefig('./figs/first_week.jpg', dpi = 'figure')
@@ -365,160 +354,170 @@ plt.savefig('./figs/first_week.jpg', dpi = 'figure')
 plt.show()
 plt.close()
 
-### The first week's share has expanded from ~27% in 1994-97 to ~59% in 2018-19, an increase of 32 percentage points 
+### The first week's share has expanded from ~23% in 1994 to ~62% in 2019, an increase of 39 percentage points 
 
 ### Median first week's share for films with total gross revenue
-    ### above the median, expanded from ~22% in 1994 to ~52% in 2019, an increase of 30 percentage points
-    ### below the median, expanded from ~30% in 1994 to ~70% in 2019, an increase of 40 percentage points
+    ### above the median, expanded from ~21% in 1994 to ~53% in 2019, an increase of 32 percentage points
+    ### below the median, expanded from ~29% in 1994 to ~71% in 2019, an increase of 42 percentage points
     
 ### Over the 26 year period, a film's stay at the theaters has shortened, given how much of the total gross is earned in the first week. This is even more evident for the less successful films. If a film is deemed to be unsuccessful, it doesn't get to stay in the theatre. While this has been always true, it is now significantly more acute.
 
-#%% Genre
-
-df = pd.crosstab(movie_master['release_interval'], movie_master['genre'], normalize = 'index').round(4)
-df = df*100
-
-ax1 = df.plot(kind = 'bar', stacked = True, figsize = (10, 4), colormap = 'tab20_r', legend = False)
-ax1.set_xlabel('Year of Release', fontsize = 14)
-ax1.set_xticks(np.arange(0, 9, 1))
-ax1.set_xticklabels(['1994-1996', '1997-1999', '2000-2002', '2003-2005', '2006-2008', 
-                       '2009-2011', '2012-2014', '2015-17', '2018-2019'], rotation = 45, 
-                      fontsize = 8)
-ax1.set_ylabel('Share in Percentage', fontsize = 14)
-ax1.set_title('Share of movie genres in top films in 3 year time intervals', fontweight = 'bold')
-ax1.legend(ncol = 1, loc = (1.01, 0))
-plt.savefig('./figs/genre_all.jpg', dpi = 'figure')
-
-
-intervals = movie_master['release_interval'].unique()
-mm_top = pd.DataFrame(data = None, columns = ['release_interval', 'genre'])
-mm_bot = mm_top
-for interval in intervals:
-    mm_int = movie_master.query('release_interval == @interval').loc[:, ['release_interval', 'genre']]
-    mid = int(len(mm_int)/2)
-    mm_top = mm_top.append(mm_int.iloc[:mid, :], ignore_index = True)
-    mm_bot = mm_bot.append(mm_int.iloc[mid:, :], ignore_index = True)
-    
-df = pd.crosstab(mm_top['release_interval'], mm_top['genre'], normalize = 'index').round(4)
-df = df*100
-
-ax2 = df.plot(kind = 'bar', stacked = True, figsize = (10, 4), colormap = 'tab20_r', legend = False)
-ax2.legend(ncol = 1, loc = (1.01, 0))
-ax2.set_xlabel('Year of Release', fontsize = 14)
-ax2.set_xticks(np.arange(0, 9, 1))
-ax2.set_xticklabels(['1994-1996', '1997-1999', '2000-2002', '2003-2005', '2006-2008', 
-                       '2009-2011', '2012-2014', '2015-17', '2018-2019'], rotation = 45, 
-                      fontsize = 8)
-ax2.set_ylabel('Share in Percentage', fontsize = 14)
-ax2.set_title('Share of movie genres in top films in 3 year time intervals - top hhalf', fontweight = 'bold')
-ax2.legend(ncol = 1, loc = (1.01, 0))
-plt.savefig('./figs/genre_top.jpg', dpi = 'figure')
-
-df = pd.crosstab(mm_bot['release_interval'], mm_bot['genre'], normalize = 'index').round(4)
-df = df*100
-
-ax3 = df.plot(kind = 'bar', stacked = True, figsize = (10, 4), colormap = 'tab20_r', legend = False)
-ax3.legend(ncol = 1, loc = (1.01, 0))
-ax3.set_xlabel('Year of Release', fontsize = 14)
-ax3.set_xticks(np.arange(0, 9, 1))
-ax3.set_xticklabels(['1994-1996', '1997-1999', '2000-2002', '2003-2005', '2006-2008', 
-                       '2009-2011', '2012-2014', '2015-17', '2018-2019'], rotation = 45, 
-                      fontsize = 8)
-ax3.set_ylabel('Share in Percentage', fontsize = 14)
-ax3.set_title('Share of movie genres in top films in 3 year time intervals - bottom half ', fontweight = 'bold')
-ax3.legend(ncol = 1, loc = (1.01, 0))
-plt.savefig('./figs/genre_bot.jpg', dpi = 'figure')
-
-
-### Different genres are popular at different time intervals. However, there is no discernable difference between genres across strata
-
-
 #%% Release Month
 
-df_all = pd.crosstab(movie_master['release_interval'], movie_master['release_month'], normalize = 'index').round(4)
+df_all = pd.crosstab(movie_master['release_year'], movie_master['release_month'], normalize = 'index').round(4)
 df_all = df_all*100
 
-ax1 = df_all.plot(kind = 'bar', stacked = True, figsize = (10, 4), colormap = 'tab20_r', legend = False)
-ax1.set_xlabel('Year of Release', fontsize = 14)
-ax1.set_xticks(np.arange(0, 9, 1))
-ax1.set_xticklabels(['1994-1996', '1997-1999', '2000-2002', '2003-2005', '2006-2008', 
-                       '2009-2011', '2012-2014', '2015-17', '2018-2019'], rotation = 45, 
-                      fontsize = 8)
-ax1.set_ylabel('Share in Percentage', fontsize = 14)
-ax1.set_title('Share of movie genres in top films in 3 year time intervals', fontweight = 'bold')
-ax1.legend(ncol = 1, loc = (1.01, 0))
-plt.savefig('./figs/release_month_all.jpg', dpi = 'figure')
-
-
-intervals = movie_master['release_interval'].unique()
-mm_top = pd.DataFrame(data = None, columns = ['release_interval', 'release_month'])
+years = movie_master['release_year'].unique()
+mm_top = pd.DataFrame(data = None, columns = ['release_year', 'release_month'])
 mm_bot = mm_top
-for interval in intervals:
-    mm_int = movie_master.query('release_interval == @interval').loc[:, ['release_interval', 'release_month']]
-    mid = int(len(mm_int)/2)
-    mm_top = mm_top.append(mm_int.iloc[:mid, :], ignore_index = True)
-    mm_bot = mm_bot.append(mm_int.iloc[mid:, :], ignore_index = True)
+for year in years:
+    mm_year = movie_master.query('release_year == @year').loc[:, ['release_year', 'release_month']]
+    mm_top = mm_top.append(mm_year.iloc[:25, :], ignore_index = True)
+    mm_bot = mm_bot.append(mm_year.iloc[25:, :], ignore_index = True)
     
-df_top = pd.crosstab(mm_top['release_interval'], mm_top['release_month'], normalize = 'index').round(4)
+df_top = pd.crosstab(mm_top['release_year'], mm_top['release_month'], normalize = 'index').round(4)
 df_top = df_top*100
 
-ax2 = df_top.plot(kind = 'bar', stacked = True, figsize = (10, 4), colormap = 'tab20_r', legend = False)
-ax2.legend(ncol = 1, loc = (1.01, 0))
-ax2.set_xlabel('Year of Release', fontsize = 14)
-ax2.set_xticks(np.arange(0, 9, 1))
-ax2.set_xticklabels(['1994-1996', '1997-1999', '2000-2002', '2003-2005', '2006-2008', 
-                       '2009-2011', '2012-2014', '2015-17', '2018-2019'], rotation = 45, 
-                      fontsize = 8)
-ax2.set_ylabel('Share in Percentage', fontsize = 14)
-ax2.set_title('Share of movie genres in top films in 3 year time intervals - top hhalf', fontweight = 'bold')
-ax2.legend(ncol = 1, loc = (1.01, 0))
-plt.savefig('./figs/release_month_top.jpg', dpi = 'figure')
-
-df_bot = pd.crosstab(mm_bot['release_interval'], mm_bot['release_month'], normalize = 'index').round(4)
+df_bot = pd.crosstab(mm_bot['release_year'], mm_bot['release_month'], normalize = 'index').round(4)
 df_bot = df_bot*100
 
-ax3 = df_bot.plot(kind = 'bar', stacked = True, figsize = (10, 4), colormap = 'tab20_r', legend = False)
-ax3.legend(ncol = 1, loc = (1.01, 0))
-ax3.set_xlabel('Year of Release', fontsize = 14)
-ax3.set_xticks(np.arange(0, 9, 1))
-ax3.set_xticklabels(['1994-1996', '1997-1999', '2000-2002', '2003-2005', '2006-2008', 
-                       '2009-2011', '2012-2014', '2015-17', '2018-2019'], rotation = 45, 
-                      fontsize = 8)
-ax3.set_ylabel('Share in Percentage', fontsize = 14)
-ax3.set_title('Share of movie genres in top films in 3 year time intervals - bottom half ', fontweight = 'bold')
-ax3.legend(ncol = 1, loc = (1.01, 0))
-plt.savefig('./figs/release_month_bot.jpg', dpi = 'figure')
+fig, axs = plt.subplots(nrows = 3, sharex = 'col', figsize = (10, 12))
+
+axs[0].plot(df_all.columns, df_all.mean())
+axs[0].set_title('Share of release month for top films during 1994-2019', fontweight = 'bold')
+axs[0].set_ylabel('Share in Percentage', fontsize = 14)
+axs[0].grid(True)
+axs[0].axhline(y = 100/12, color = 'r', linestyle = '--')
+
+axs[1].plot(df_top.columns, df_top.mean())
+axs[1].set_title('Share of release month for top films during 1994-2019 - Top Half', fontweight = 'bold')
+axs[1].set_ylabel('Share in Percentage', fontsize = 14)
+axs[1].grid(True)
+axs[1].axhline(y = 100/12, color = 'r', linestyle = '--')
+
+axs[2].plot(df_bot.columns, df_bot.mean())
+axs[2].set_title('Share of release month for top films during 1994-2019 - Bottom Half', fontweight = 'bold')
+axs[2].set_ylabel('Share in Percentage', fontsize = 14)
+axs[2].grid(True)
+axs[2].axhline(y = 100/12, color = 'r', linestyle = '--')
+axs[2].set_xticks(np.arange(1, 13, 1))
+axs[2].set_xticklabels(['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 
+                   'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'], rotation = 45, fontsize = 8)
+axs[2].set_xlabel('Month of Release', fontsize = 14)
+
+plt.savefig('./figs/release_month.jpg', dpi = 'figure')
+plt.show()
+plt.close()
+
+### For the more successful films, the preferred months of release are Jun, Jul, Aug and Dec the  not-preferred months are Jan, Feb and Mar and the rest are neutral
+### For the less successful films, the preferred months of release are Mar, Aug, Sep and Oct, the  not-preferred months are Feb, Jun and Dec and the rest are neutral
+
+#%% Region
+
+years = movie_master['release_year'].unique()
+reg_count = np.shape(region_master)[0]
+df_top = pd.DataFrame(data = None, index = years, columns = region_master['region'])
+df_bot = pd.DataFrame(data = None, index = years, columns = region_master['region'])
+
+for year in years:
+    i = 0                   # index to capture the data for top 25 movies of the year
+    s_top = [0]*reg_count
+    s_bot = [0]*reg_count
+    movie_ids = movie_master.query('release_year == @year')['movie_id']
+    for movie_id in movie_ids:
+        movie_reg_net_gross = weekly_master.query('movie_id == @movie_id')['net-gross'].tolist()
+        if i < 25:          # adding the net-gross for the top 25 movies of a year
+            s_top = [sum(x) for x in zip(s_top, movie_reg_net_gross)]
+        else:
+            s_bot = [sum(x) for x in zip(s_bot, movie_reg_net_gross)]
+        i += 1
+
+    s_top = [x/sum(s_top) for x in s_top]
+    s_bot = [x/sum(s_bot) for x in s_bot]
+
+    df_top.loc[df_top.index == year, :] = s_top
+    df_bot.loc[df_bot.index == year, :] = s_bot
+
+ncols = 3
+nrows = np.ceil(region_master.shape[0]/ncols).astype('int')
+idx = 0
+
+fig, axs = plt.subplots(ncols = ncols, nrows = nrows, sharex = 'col', sharey = 'row', figsize = (15, 10))
+
+for row in range(nrows):
+    for col in range(ncols):
+        if idx == len(df_top.columns):
+            exit
+        else:
+            axs[row, col].plot(df_top.index, df_top.iloc[:, idx]*100, label = 'Top Half')
+            axs[row, col].plot(df_bot.index, df_bot.iloc[:, idx]*100, label = 'Bottom Half')
+            axs[row, col].set_title("Share of %s in net gross revenue" % df_top.columns[idx])
+            axs[row, col].grid(True)
+            axs[row, col].legend()
+            idx += 1
+
+fig.text(0.5, 0.001, 'Year of Release', ha = 'center', fontsize = 14)
+fig.text(0.001, 0.5, 'Share in Percentage', va = 'center', fontsize = 14, rotation = 'vertical')
+plt.tight_layout()
+
+plt.savefig('./figs/region_share.jpg', dpi = 'figure')
+plt.show()
+plt.close()
+
+### Share of revenue across regions have broadly stayed constant over the years.
+
+### There are minimal differences between the top and bottom grossing movies when it comes to regional shares in revenue.
+
+#%% Genres
+
+years = movie_master['release_year'].unique()
+genres = movie_master['genre'].unique().tolist()
+genres.sort()
+df_top = pd.DataFrame(data = None, index = years, columns = genres)
+df_bot = pd.DataFrame(data = None, index = years, columns = genres)
+
+for year in years:
+    s = movie_master.query('release_year == @year')['genre']
+    s.reset_index(drop = True, inplace = True)
+    mid = int(len(s)/2)
+    df_top.loc[df_top.index == year, :] = s[:mid].value_counts(sort = False, normalize = True).tolist()
+    df_bot.loc[df_bot.index == year, :] = s[mid:].value_counts(sort = False, normalize = True).tolist()
+    
+
+ncols = 3
+nrows = np.ceil(len(genres)/ncols).astype('int')
+idx = 0
+
+fig, axs = plt.subplots(ncols = ncols, nrows = nrows, sharex = 'col', sharey = 'row', figsize = (15, 10))
+
+for row in range(nrows):
+    for col in range(ncols):
+        if idx == len(df_top.columns):
+            exit
+        else:
+            axs[row, col].plot(df_top.index, df_top.iloc[:, idx]*100, label = 'Top Half')
+            axs[row, col].plot(df_bot.index, df_bot.iloc[:, idx]*100, label = 'Bottom Half')
+            axs[row, col].set_title("Share of %s movies released in a year" % df_top.columns[idx])
+            axs[row, col].grid(True)
+            axs[row, col].legend()
+            idx += 1
+
+fig.text(0.5, 0.001, 'Year of Release', ha = 'center', fontsize = 14)
+fig.text(0.001, 0.5, 'Share in Percentage', va = 'center', fontsize = 14, rotation = 'vertical')
+plt.tight_layout()
+
+plt.savefig('./figs/genre_share.jpg', dpi = 'figure')
+plt.show()
+plt.close()
+
+### There are noticable differences in the genres that are "preferred" in a year.
+    ### Preference has shifted from Action movies to Drama movies
+    ### Comedy movies maintain a constant share
+    ### There was a growing preference to Love Story movies up until 2005 but that preference
+    ### waning since then.
+    ### Thriller movies are seeing a preference in recent years
+
+### There are minimal differences between the top and bottom grossing movies when it comes to choice of genres.
 
 
-### For the more successful films, the preferred months of release are Aug, Sep and Oct, the  not-preferred months are Feb and July and the rest are neutral
-### For the less successful films, the preferred months of release are Sep and Nov, the  not-preferred months are Feb and Dec and the rest are neutral
 
-
-#%% Correlations
-
-# tab20, tab20_r, tab20b, tab20b_r, tab20c, tab20c_r
-
-['movie_id', 'title', 'release_date', 'runtime', 'genre', 'screens',
-       'india-footfalls', 'budget', 'india-nett-gross',
-       'india-adjusted-nett-gross', 'india-first-day', 'india-first-weekend',
-       'india-first-week', 'india-total-gross', 'india-distributor-share',
-       'worldwide-total-gross', 'release_year', 'release_week',
-       'release_month', 'release_interval', 'cpi']
-
-
-movie_master.loc[:, ['india-total-gross', 'genre']].corr() #.iloc[0, 1].round(2)
-foo = pd.crosstab(movie_master['release_month'], movie_master['release_interval'], normalize = 'columns').round(4)
-
-#%% Scratch
-df = movie_master.query('release_interval == 9').loc[:, ['movie_id', 'india-total-gross']]
-df.sort_values(by = 'india-total-gross', inplace = True, ignore_index = True, 
-                ascending = False)
-
-col_names = ['month_1', 'month_2']
-df_w = pd.DataFrame(data = None, columns = col_names)
-
-for id_ in df['movie_id']:
-    s = weekly_master.query('movie_id == @id_').iloc[:, 4:].sum()
-    s = s.cumsum()/s.sum()
-    s = {'month_1' : s[4]*100, 'month_2' : (s[8] - s[4])*100}
-    df_w = df_w.append(s, ignore_index = True)

@@ -122,7 +122,7 @@ plt.close()
 
 #%% Budgets
 
-fig, ax = plt.subplots(nrows = 3, sharex = 'col', figsize = (10, 12))
+fig, ax = plt.subplots(ncols = 3, figsize = (15, 5))
 
 s = movie_master.groupby('release_year')['budget'].sum()
 ax[0].plot(s.index, s/1000000000)
@@ -146,17 +146,18 @@ for i in range(len(ax)):
     ax[i].grid()
     ax[i].legend()
 
-ax[0].set_title('Total budget for the top 50 films of the year', fontweight = 'bold')
-ax[1].set_title('Median budget for the top 50 films of the year', fontweight = 'bold')
-ax[2].set_title('Share of total budget for the top 50 films of the year', fontweight = 'bold')
+ax[0].set_title('Total budget for the top 50 films', fontweight = 'bold')
+ax[1].set_title('Median budget for the top 50 films', fontweight = 'bold')
+ax[2].set_title('Share of total budget for the top 50 films', fontweight = 'bold')
 
 ax[0].set_ylabel('Rupees in billions', fontsize = 14)
 ax[1].set_ylabel('Rupees in billions', fontsize = 14)
 ax[2].set_ylabel('Share in %', fontsize = 14)
 
+ax[0].set_xlabel('Year of Release', fontsize = 14)
+ax[1].set_xlabel('Year of Release', fontsize = 14)
 ax[2].set_xlabel('Year of Release', fontsize = 14)
-ax[2].set_xticks(years)
-ax[2].set_xticklabels(years, rotation = 45, fontsize = 8)
+
 
 # Save before you Show. Show "creates" a new figure.
 plt.savefig('./figs/budget.jpg', dpi = 'figure')
@@ -164,17 +165,17 @@ plt.savefig('./figs/budget.jpg', dpi = 'figure')
 plt.show()
 plt.close()
 
-### Total budget have expanded from ~Rs.4.9B in 1994 to ~Rs.48.8B in 2019, a CAGR of 9.24%
+### Total budget have expanded from ~Rs.1.2B in 1994 to ~Rs.35B in 2019, a CAGR of 13.85%
 
 ### Median budget for
     ### the top 25 films expanded from ~Rs.28M in 1994 to ~Rs.840M in 2019, a CAGR of 14%
     ### the next 25 films expanded from ~Rs.19M in 1994 to ~Rs.310M in 2019, a CAGR of 11%
 
-### Top 25 films account for ~76% of 1994 budget versus ~87% of 2019 budget
+### Top 25 films account for ~61% of 1994 budget versus ~75% of 2019 budget
 
 #%% Screens
 
-fig, ax = plt.subplots(nrows = 2, sharex = 'col', figsize = (10, 8))
+fig, ax = plt.subplots(ncols = 2, sharex = 'col', figsize = (15, 5))
 
 years = movie_master['release_year'].unique()
 col_names = ['Median: All', 'Median: Top Half', 'Median: Bottom Half']
@@ -196,14 +197,14 @@ for i in range(len(ax)):
     ax[i].legend()
 
 ax[0].set_title('Median no. of release screens for top films of the year', fontweight = 'bold')
-ax[1].set_title('Median no. of release screens for top films of the year - Stratified by Total Gross Revenue', fontweight = 'bold')
+ax[1].set_title('Median no. of release screens for top films of the year - Stratified', fontweight = 'bold')
 
 ax[0].set_ylabel('Number of screens', fontsize = 14)
 ax[1].set_ylabel('Number of screens', fontsize = 14)
 
+ax[0].set_xlabel('Year of Release', fontsize = 14)
 ax[1].set_xlabel('Year of Release', fontsize = 14)
-ax[1].set_xticks(years)
-ax[1].set_xticklabels(years, rotation = 45, fontsize = 8)
+
 
 # Save before you Show. Show "creates" a new figure.
 plt.savefig('./figs/screens.jpg', dpi = 'figure')
@@ -260,7 +261,7 @@ plt.close()
 
 ### The median runtime has contracted from 156 mins. in 1994 to 140 mins. in 2019, a drop of 16 minutes or ~10% 
 
-### Median number of release screens for films with total gross revenue
+### Median runtime for films, with total gross revenue
     ### above the median, contracted from 161 mins. in 1994 to 146 mins in 2019, a drop of 15 mins. or ~9%
     ### below the median, contracted from 152 mins. in 1994 to 134 mins in 2019, a drop of 18 mins. or ~12%
     

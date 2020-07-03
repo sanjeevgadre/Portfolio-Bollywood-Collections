@@ -17,12 +17,6 @@ cpi_master = pd.read_csv('./data/CPI.csv')
 # Re-index movie_master to get unique index values
 movie_master.reset_index(drop = True, inplace = True)
 
-'''# Extract revenue adjustment factor. The revenue adjustment factor adjusts historical revenue to its equivalent current value
-movie_master['rev_adj_factor'] = movie_master.apply(lambda x: x['india-adjusted-nett-gross']/x['india-nett-gross'], axis = 1)
-
-# Compute return on budget
-movie_master['ret_on_budget'] = movie_master.apply(lambda x: x['india-nett-gross']/x['budget'], axis = 1)'''
-
 # Extract release_year from release_date
 movie_master['release_year'] = movie_master['release_date'].apply(lambda x: datetime.strptime(x, '%d %b %Y').year)
 
@@ -33,6 +27,7 @@ movie_master['release_week'] = movie_master['release_week'].astype('category')
 # Extract release_month from release_date and convert release_month to categorical data
 movie_master['release_month'] = movie_master['release_date'].apply(lambda x: datetime.strptime(x, '%d %b %Y').month)
 movie_master['release_month'] = movie_master['release_month'].astype('category')
+
 
 # Convert genre to categorical data
 movie_master['genre'] = movie_master['genre'].astype('category')
@@ -67,8 +62,21 @@ for year in zero_years:
     for idx in df.index:
         movie_master.loc[idx, 'india-footfalls'] = movie_master.loc[idx, 'india-nett-gross'] * mean_ff_to_gross
         
-'''# Get the CPI (inflation index) value for each film
-movie_master['cpi'] = [cpi_master.query('Year == @x')['CPI'].item() for x in movie_master['release_year']]'''
+''' 
+We adjust for inflation three columns of movie_master: india-total-gross, india-distributor-share and india-first-week. We capture the adjusted values in three new columns: india_total_gross_adj, india_distributor_share_adj and india_first_week_adj.
+
+To adjust for inflation we use the CPI values from cpi_master
+'''
+
+cols = ['india-total-gross', 'india-distributor-share', 'india-first-week']
+new_cols = ['india_total_gross_adj', 'india_distributor_share_adj', 'india_first_week_adj']
+      
+# Get the CPI adjustment factor (inflation index) for each film
+_max = cpi_master['CPI'].max()
+movie_master['inf_adj_fct'] = [_max/cpi_master.query('Year == @x')['CPI'].item() for x in            movie_master['release_year']]
+
+for c in range(len(cols)):
+    movie_master[new_cols[c]] = movie_master.apply(lambda x: x[cols[c]]*x['inf_adj_fct'], axis = 1)
         
 # Save the enriched movie_master file
 movie_master.to_pickle('./data/movie_master_en.pkl')

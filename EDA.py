@@ -222,7 +222,7 @@ plt.close()
 
 #%% Runtime
 
-fig, ax = plt.subplots(nrows = 2, sharex = 'col', figsize = (10, 8))
+fig, ax = plt.subplots(ncols = 2, sharey = 'row', figsize = (15, 5))
 
 years = movie_master['release_year'].unique()
 col_names = ['Median: All', 'Median: Top Half', 'Median: Bottom Half']
@@ -247,11 +247,10 @@ ax[0].set_title('Median runtime for top films of the year', fontweight = 'bold')
 ax[1].set_title('Median runtime for top films of the year - Stratified by revenue', fontweight = 'bold')
 
 ax[0].set_ylabel('Runtime in minutes', fontsize = 14)
-ax[1].set_ylabel('Runtime in minutes', fontsize = 14)
 
+ax[0].set_xlabel('Year of Release', fontsize = 14)
 ax[1].set_xlabel('Year of Release', fontsize = 14)
-ax[1].set_xticks(years)
-ax[1].set_xticklabels(years, rotation = 45, fontsize = 8)
+
 
 # Save before you Show. Show "creates" a new figure.
 plt.savefig('./figs/runtime.jpg', dpi = 'figure')
@@ -269,7 +268,7 @@ plt.close()
 
 #%% Distributors' share
 
-fig, ax = plt.subplots(nrows = 2, sharex = 'col', figsize = (10, 8))
+fig, ax = plt.subplots(ncols = 2, sharey = 'row', figsize = (15, 5))
 
 years = movie_master['release_year'].unique()
 col_names = ['Median: All', 'Median: Top Half', 'Median: Bottom Half']
@@ -291,14 +290,12 @@ for i in range(len(ax)):
     ax[i].legend()
 
 ax[0].set_title("Distributors' share of total gross for top films of the year", fontweight = 'bold')
-ax[1].set_title("Distributors' share of total gross for top films of the year - Stratified by Total Gross Revenue", fontweight = 'bold')
+ax[1].set_title("Distributors' share of total gross for top films of the year - Stratified", fontweight = 'bold')
 
 ax[0].set_ylabel('Share in Percentage', fontsize = 14)
-ax[1].set_ylabel('Share in Percentage', fontsize = 14)
 
+ax[0].set_xlabel('Year of Release', fontsize = 14)
 ax[1].set_xlabel('Year of Release', fontsize = 14)
-ax[1].set_xticks(years)
-ax[1].set_xticklabels(years, rotation = 45, fontsize = 8)
 
 # Save before you Show. Show "creates" a new figure.
 plt.savefig('./figs/disti_share.jpg', dpi = 'figure')
@@ -318,7 +315,7 @@ plt.close()
 
 #%% First Week Revenue
 
-fig, ax = plt.subplots(nrows = 2, sharex = 'col', figsize = (10, 8))
+fig, ax = plt.subplots(ncols = 2, sharey = 'row', figsize = (15, 5))
 
 years = movie_master['release_year'].unique()
 col_names = ['Median: All', 'Median: Top Half', 'Median: Bottom Half']
@@ -340,14 +337,12 @@ for i in range(len(ax)):
     ax[i].legend()
 
 ax[0].set_title("First week gross as % of total gross for top films of the year", fontweight = 'bold')
-ax[1].set_title("First week gross as % of total gross for top films of the year - Stratified by Total Gross Revenue", fontweight = 'bold')
+ax[1].set_title("First week gross as % of total gross for top films of the year - Stratified ", fontweight = 'bold')
 
 ax[0].set_ylabel('Share in Percentage', fontsize = 14)
-ax[1].set_ylabel('Share in Percentage', fontsize = 14)
 
+ax[0].set_xlabel('Year of Release', fontsize = 14)
 ax[1].set_xlabel('Year of Release', fontsize = 14)
-ax[1].set_xticks(years)
-ax[1].set_xticklabels(years, rotation = 45, fontsize = 8)
 
 # Save before you Show. Show "creates" a new figure.
 plt.savefig('./figs/first_week.jpg', dpi = 'figure')
@@ -382,30 +377,27 @@ df_top = df_top*100
 df_bot = pd.crosstab(mm_bot['release_year'], mm_bot['release_month'], normalize = 'index').round(4)
 df_bot = df_bot*100
 
-fig, axs = plt.subplots(nrows = 3, sharex = 'col', figsize = (10, 12))
+fig, axs = plt.subplots(ncols = 3, sharey = 'row', figsize = (15, 5))
 
 axs[0].plot(df_all.columns, df_all.mean())
-axs[0].set_title('Share of release month for top films during 1994-2019', fontweight = 'bold')
+axs[0].set_title('Share of release month for top films', fontweight = 'bold')
 axs[0].set_ylabel('Share in Percentage', fontsize = 14)
-axs[0].grid(True)
-axs[0].axhline(y = 100/12, color = 'r', linestyle = '--')
 
 axs[1].plot(df_top.columns, df_top.mean())
-axs[1].set_title('Share of release month for top films during 1994-2019 - Top Half', fontweight = 'bold')
-axs[1].set_ylabel('Share in Percentage', fontsize = 14)
-axs[1].grid(True)
-axs[1].axhline(y = 100/12, color = 'r', linestyle = '--')
+axs[1].set_title('Share of release month for top films - Top Half', fontweight = 'bold')
 
 axs[2].plot(df_bot.columns, df_bot.mean())
-axs[2].set_title('Share of release month for top films during 1994-2019 - Bottom Half', fontweight = 'bold')
-axs[2].set_ylabel('Share in Percentage', fontsize = 14)
-axs[2].grid(True)
-axs[2].axhline(y = 100/12, color = 'r', linestyle = '--')
-axs[2].set_xticks(np.arange(1, 13, 1))
-axs[2].set_xticklabels(['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 
-                   'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'], rotation = 45, fontsize = 8)
-axs[2].set_xlabel('Month of Release', fontsize = 14)
+axs[2].set_title('Share of release month for top films - Bottom Half', fontweight = 'bold')
 
+for i in range(3):
+    axs[i].grid(True)
+    axs[i].axhline(y = 100/12, color = 'r', linestyle = '--')
+    axs[i].set_xticks(np.arange(1, 13, 1))
+    axs[i].set_xticklabels(['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 
+                   'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'], rotation = 45, fontsize = 8)
+    axs[i].set_xlabel('Month of Release', fontsize = 14)
+
+plt.tight_layout()
 plt.savefig('./figs/release_month.jpg', dpi = 'figure')
 plt.show()
 plt.close()

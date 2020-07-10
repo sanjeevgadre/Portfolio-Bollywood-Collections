@@ -23,10 +23,12 @@ movie_master['release_year'] = movie_master['release_date'].apply(lambda x: date
 
 # Extract release_week from release_date and convert release_week to categorical data
 movie_master['release_week'] = movie_master['release_date'].apply(lambda x: datetime.strptime(x, '%d %b %Y').strftime('%V'))
+movie_master['release_week'] = movie_master['release_week'].astype('int')
 #movie_master['release_week'] = movie_master['release_week'].astype('category')
 
 # Extract release_month from release_date and convert release_month to categorical data
 movie_master['release_month'] = movie_master['release_date'].apply(lambda x: datetime.strptime(x, '%d %b %Y').month)
+movie_master['release_month'] = movie_master['release_month'].astype('int')
 #movie_master['release_month'] = movie_master['release_month'].astype('category')
 
 

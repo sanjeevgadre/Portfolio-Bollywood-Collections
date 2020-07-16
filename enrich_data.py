@@ -31,7 +31,6 @@ movie_master['release_month'] = movie_master['release_date'].apply(lambda x: dat
 movie_master['release_month'] = movie_master['release_month'].astype('int')
 #movie_master['release_month'] = movie_master['release_month'].astype('category')
 
-
 # Convert genre to categorical data
 movie_master['genre'] = movie_master['genre'].astype('category')
 

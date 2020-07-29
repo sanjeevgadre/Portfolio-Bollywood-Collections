@@ -43,7 +43,7 @@ for year in years:
 print('Average Spearman Correlation Coeff: %.4f' % np.mean(corr_lst))
 
 plt.figure()
-plt.plot(years, corr_lst)
+plt.scatter(years, corr_lst)
 plt.ylim(-1, 1)
 plt.xlabel('Year of Release')
 plt.axhline(y = np.mean(corr_lst), color='r', linestyle='-')
@@ -77,7 +77,7 @@ for year in years:
 print('Average Spearman Correlation Coeff: %.4f' % np.mean(corr_lst))
 
 plt.figure()
-plt.plot(years, corr_lst)
+plt.scatter(years, corr_lst)
 plt.ylim(-1, 1)
 plt.xlabel('Year of Release')
 plt.axhline(y = np.mean(corr_lst), color='r', linestyle='-')
@@ -100,7 +100,7 @@ for year in years:
 print('Average Spearman Correlation Coeff: %.4f' % np.mean(corr_lst))
 
 plt.figure()
-plt.plot(years, corr_lst)
+plt.scatter(years, corr_lst)
 plt.ylim(0, 1)
 plt.xlabel('Year of Release')
 plt.axhline(y = np.mean(corr_lst), color='r', linestyle='-')
@@ -136,32 +136,38 @@ for year in years:
 print('Average Spearman Correlation Coeff: %.4f' % np.mean(corr_lst))
 
 plt.figure()
-plt.plot(years, corr_lst)
+plt.scatter(years, corr_lst)
 plt.ylim(-1, 1)
 plt.xlabel('Year of Release')
 plt.axhline(y = np.mean(corr_lst), color='r', linestyle='-')
 plt.axhline(y = 0.3, color = 'b', linestyle='--')
 plt.axhline(y = -0.3, color = 'b', linestyle='--')
-plt.title('Spearman Correlation: Release Week v/s Budget')
+plt.title('Spearman Correlation: Release Week v/s Genre')
 plt.grid(axis = 'y')
-plt.savefig('./figs/corr/w_b_cond_y.jpg', dpi = 'figure')
+plt.savefig('./figs/corr/w_g_cond_y.jpg', dpi = 'figure')
 plt.show()
 plt.close()
 
-## Release Week v/s Runtime conditioned on Budget
-movie_master['release_week'] = movie_master['release_week'].astype('category') # <--- Temp
+## Release Week v/s Runtime conditioned on Budget and Year
 X = movie_master.loc[:, ['runtime', 'budget']]
 X = (X - X.mean())/X.std()
+X = pd.concat([X, movie_master['release_year']], axis = 1)
 Y = movie_master['release_week']
 
-model = sm.MNLogit(Y, X).fit()
-print(model.summary())
+model = sm.MNLogit(Y.astype('float'), X.astype('float')).fit()
+print('The Pseudo R Square for the fitted model: %.4f' % model.prsquared)
 
-plt.figure(figsize=(12, 45))
-plt.text(0.01, 0.05, str(model.summary()), {'fontsize': 10}, fontproperties = 'monospace') 
-plt.axis('off')
-plt.tight_layout()
-plt.savefig('./figs/corr/w_r_cond_b.jpg')
+s = model.pvalues.loc['runtime',:]
+
+plt.figure()
+plt.scatter(s.index, s)
+plt.axhline(y = 0.05, color = 'r', linestyle = '--')
+plt.ylabel('p-values')
+plt.xlabel('Release Week')
+plt.xticks(np.arange(1, 54, 3))
+plt.title('p-value for Coefficeint of Runtime v/s Release Week')
+plt.savefig('./figs/corr/w_r_cond_b_y.jpg')
+plt.show()
 plt.close()
 
 ## Release Week v/s Budget 
@@ -194,16 +200,6 @@ print('%.4f' % corr)
 corr = movie_master['release_week'].corr(movie_master['runtime'], method = 'spearman')
 print('%.4f' % corr)
 
-plt.figure()
-plt.plot(np.sort(movie_master['release_week'].unique()), 
-         movie_master.groupby('release_week')['runtime'].median())
-plt.title('Release Week v/s Median Screens')
-plt.ylabel('Number of Screens')
-plt.xlabel('Week of Release')
-plt.xticks(np.arange(1, 53, 5))
-plt.savefig('./figs/corr/s_w.jpg', dpi = 'figure')
-plt.show()
-
 ## Screens v/s Genre
 corr_lst = []
 years = movie_master['release_year'].unique()
@@ -216,7 +212,7 @@ for year in years:
 print('Average Spearman Correlation Coeff: %.4f' % np.mean(corr_lst))
 
 plt.figure()
-plt.plot(years, corr_lst)
+plt.scatter(years, corr_lst)
 plt.ylim(-1, 1)
 plt.xlabel('Year of Release')
 plt.axhline(y = np.mean(corr_lst), color='r', linestyle='-')
@@ -231,7 +227,6 @@ plt.close()
 ## Screens v/s Runtime conditioned on Year and Budget
 years = movie_master['release_year'].unique()
 p_val_lst = []
-coeff_lst = []
 for year in years:
     X = movie_master.loc[movie_master['release_year'] == year, ['budget', 'runtime']]
     Y = movie_master.loc[movie_master['release_year'] == year]['screens']
@@ -242,17 +237,16 @@ for year in years:
     
     p_val = model.pvalues['runtime']
     p_val_lst.append(p_val)
-    coeff = model.params['runtime']
-    coeff_lst.append(coeff)
     
 plt.figure()
-plt.plot(years, p_val_lst)
-plt.ylim(0, 1)
+plt.scatter(years, p_val_lst)
+plt.ylim(-0.1, 1)
 plt.xlabel('Year of Release')
-plt.axhline(y = 0.05, color = 'b', linestyle='--')
+plt.ylabel('p values')
+plt.axhline(y = 0.05, color = 'r', linestyle='--')
 plt.title('p-values for Regression Coefficient: Screens v/s Runtime')
 plt.grid(axis = 'y')
-plt.savefig('./figs/corr/s_r_cond_y.jpg', dpi = 'figure')
+plt.savefig('./figs/corr/s_r_cond_b_y.jpg', dpi = 'figure')
 plt.show()
 plt.close()
 
@@ -269,7 +263,7 @@ for year in years:
 print('Average Spearman Correlation Coeff: %.4f' % np.mean(corr_lst))
 
 plt.figure()
-plt.plot(years, corr_lst)
+plt.scatter(years, corr_lst)
 plt.ylim(0, 1)
 plt.xlabel('Year of Release')
 plt.axhline(y = np.mean(corr_lst), color='r', linestyle='-')
@@ -293,7 +287,7 @@ disti_share = movie_master['india-distributor-share']/movie_master['india-total-
 corr = movie_master['release_week'].corr(disti_share, method = 'spearman')
 print('%.4f' % corr)
 
-## Distributor Share v/s Genre
+## Distributor Share v/s Genre conditioned on Year
 corr_lst = []
 years = movie_master['release_year'].unique()
 for year in years:
@@ -306,7 +300,7 @@ for year in years:
 print('Average Spearman Correlation Coeff: %.4f' % np.mean(corr_lst))
 
 plt.figure()
-plt.plot(years, corr_lst)
+plt.scatter(years, corr_lst)
 plt.ylim(-1, 1)
 plt.xlabel('Year of Release')
 plt.axhline(y = np.mean(corr_lst), color='r', linestyle='-')
@@ -330,7 +324,6 @@ print(model.summary())
 ## Distributor Share v/s Runtime conditioned on Year and Budget
 years = movie_master['release_year'].unique()
 p_val_lst = []
-coeff_lst = []
 for year in years:
     X = movie_master.loc[movie_master['release_year'] == year, ['budget', 'runtime']]
     indx = movie_master.loc[movie_master['release_year'] == year].index
@@ -342,17 +335,16 @@ for year in years:
     
     p_val = model.pvalues['runtime']
     p_val_lst.append(p_val)
-    coeff = model.params['runtime']
-    coeff_lst.append(coeff)
     
 plt.figure()
-plt.plot(years, p_val_lst)
-plt.ylim(0, 1)
+plt.scatter(years, p_val_lst)
+plt.ylim(-0.1, 1)
 plt.xlabel('Year of Release')
-plt.axhline(y = 0.05, color = 'b', linestyle='--')
+plt.ylabel('p values')
+plt.axhline(y = 0.05, color = 'r', linestyle='--')
 plt.title('p-values for Regression Coefficient: Distributor Share v/s Runtime')
 plt.grid(axis = 'y')
-plt.savefig('./figs/corr/d_r_x_y_b.jpg', dpi = 'figure')
+plt.savefig('./figs/corr/d_r_cond_y_b.jpg', dpi = 'figure')
 plt.show()
 plt.close()
 
@@ -370,7 +362,7 @@ for year in years:
 print('Average Spearman Correlation Coeff: %.4f' % np.mean(corr_lst))
 
 plt.figure()
-plt.plot(years, corr_lst)
+plt.scatter(years, corr_lst)
 plt.ylim(0, 1)
 plt.xlabel('Year of Release')
 plt.axhline(y = np.mean(corr_lst), color='r', linestyle='-')
@@ -378,7 +370,7 @@ plt.axhline(y = 0.3, color = 'b', linestyle='--')
 plt.axhline(y = -0.3, color = 'b', linestyle='--')
 plt.title('Spearman Correlation: Distributor Share v/s Budget')
 plt.grid(axis = 'y')
-plt.savefig('./figs/corr/d_b_x_y.jpg', dpi = 'figure')
+plt.savefig('./figs/corr/d_b_cond_y.jpg', dpi = 'figure')
 plt.show()
 plt.close()
 

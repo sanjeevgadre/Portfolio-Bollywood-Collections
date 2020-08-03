@@ -97,10 +97,10 @@ weekly_master_cols = ['movie_id', 'region_id', 'net-gross', 'dist-net-gross', 'w
                       'week_9', 'week_ten', 'week_x11']
 
 # Years for which scraping is undertaken
-years = [x for x in range(2018, 2020, 1)]
+years = [x for x in range(1994, 2020, 1)]
 
 # Unique movie_id seed for each run
-movie_id = int(datetime.now().strftime('%y%m%d%H%M'))   
+movie_id = int(datetime.now().strftime('%y%m%d%H%M%S'))
 
 
 #%% Step 2: Scrapping Data

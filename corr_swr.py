@@ -58,14 +58,22 @@ plt.savefig('./figs/corr/swr_g_cond_y.jpg', dpi = 'figure')
 plt.show()
 plt.close()
 
-## Second Week Revenue v/s First Week Revenue
+## Second Week Revenue v/s First Week Revenue conditioned on Budget, Screens and Distributor Share
+disti_share = movie_master['india-distributor-share']/movie_master['india-total-gross']
+X = movie_master.loc[:, ['budget', 'screens']]
+X = pd.concat([X, disti_share, fwr], axis = 1)
+X.columns = ['budget', 'screens', 'disti_share', 'fwr']
+Y = swr
+X = (X - X.mean())/X.std()
+Y = (Y - Y.mean())/Y.std()
 
+model = sm.OLS(Y, X).fit()
+print(model.summary())
 
 ## Second Week Revenue v/s Distributor Share conditioned on Budget
-disti_share = movie_master['india-distributor-share']/movie_master['india-total-gross']
 X = pd.concat([movie_master['budget'], disti_share], axis = 1)
 X.columns = ['budget', 'disti_share']
-Y = fwr
+Y = swr
 X = (X - X.mean())/X.std()
 Y = (Y - Y.mean())/Y.std()
 
@@ -74,7 +82,7 @@ print(model.summary())
 
 ## Second Week Revenue v/s Screens conditioned on Budget
 X = movie_master.loc[:, ['budget', 'screens']]
-Y = fwr
+Y = swr
 X = (X - X.mean())/X.std()
 Y = (Y - Y.mean())/Y.std()
 
@@ -87,7 +95,7 @@ years = movie_master['release_year'].unique()
 for year in years:
     X = movie_master.loc[movie_master['release_year'] == year, ['budget', 'runtime']]
     indx = movie_master.loc[movie_master['release_year'] == year].index
-    Y = fwr[indx]
+    Y = swr[indx]
     X = (X - X.mean())/X.std()
     Y = (Y - Y.mean())/Y.std()
     model = sm.OLS(Y, X).fit()
@@ -99,7 +107,7 @@ plt.xlabel('Year of Release')
 plt.axhline(y = 0.05, color='r', linestyle='--')
 plt.title('p-values for Regression Coefficient: Second Week Revenue v/s Runtime')
 plt.grid(axis = 'y')
-plt.savefig('./figs/corr/f_r_cond_y_b.jpg', dpi = 'figure')
+plt.savefig('./figs/corr/swr_r_cond_y_b.jpg', dpi = 'figure')
 plt.show()
 plt.close()
 
@@ -109,7 +117,7 @@ corr_lst = []
 for year in years:
     X = movie_master.loc[movie_master['release_year'] == year, 'budget']
     indx = movie_master.loc[movie_master['release_year'] == year].index
-    Y = fwr[indx]
+    Y = swr[indx]
     corr = X.corr(Y, method = 'spearman')
     corr_lst.append(corr)
     
@@ -123,7 +131,7 @@ plt.axhline(y = np.mean(corr_lst), color='r', linestyle='-')
 plt.axhline(y = 0.3, color = 'b', linestyle='--')
 plt.title('Spearman Correlation: Second Week Revenue v/s Budget')
 plt.grid(axis = 'y')
-plt.savefig('./figs/corr/f_b_cond_y_i.jpg', dpi = 'figure')
+plt.savefig('./figs/corr/swr_b_cond_y_i.jpg', dpi = 'figure')
 plt.show()
 plt.close()
 

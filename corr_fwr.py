@@ -19,7 +19,7 @@ cpi_master = pd.read_csv('./data/CPI.csv')
 
 # Adjusting the first week revenue to account for entertainment and service tax
 fwr = movie_master['india-first-week'] * (movie_master['india-nett-gross']/movie_master['india-total-gross'])
-
+disti_share = movie_master['india-distributor-share']/movie_master['india-total-gross']
 
 #%% FIRST WEEK REVENUE
 ## First Week Revenue v/s Release Week
@@ -133,5 +133,47 @@ X = movie_master['release_year']
 Y = fwr
 corr = X.corr(Y, method = 'spearman')
 print('Total Effect of Y on F : %.4f' % corr)
+
+#%% First Week Models - statsmodels
+X = movie_master.loc[:, ['budget', 'screens']]
+X = pd.concat([X, disti_share], axis = 1)
+X.columns = ['budget', 'screens','disti_share']
+X = sm.add_constant(X)
+Y = fwr
+
+model = sm.OLS(Y, X).fit()
+print(model.summary())
+
+
+X = movie_master.loc[:, ['budget', 'screens']]
+X = pd.concat([X, disti_share], axis = 1)
+X.columns = ['budget', 'screens','disti_share']
+X = (X - X.mean())/X.std()
+Y = fwr
+Y = (Y - Y.mean())/Y.std()
+
+model = sm.OLS(Y, X).fit()
+print(model.summary())
+
+#%% First Week Models - sklearn
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LinearRegression
+from sklearn.preprocessing import StandardScaler
+
+X = movie_master.loc[:, ['budget', 'screens']]
+X = pd.concat([X, disti_share], axis = 1)
+X.columns = ['budget', 'screens','disti_share']
+Y = fwr
+
+StandardScaler().fit(X, Y)
+
+X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size = 0.25)
+
+lr_model = LinearRegression(normalize = True)
+lr_model.fit(X_train, Y_train)
+print(lr_model.score(X_test, Y_test))
+
+Y_pred = lr_model.predict(X_test)
+
 
 

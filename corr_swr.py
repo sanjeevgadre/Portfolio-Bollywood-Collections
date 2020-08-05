@@ -137,18 +137,18 @@ plt.close()
 
 ## Second Week Revenue v/s Year, conditioned on Inflation
 X = movie_master['release_year']
-Y = fwr * movie_master['inf_adj_fct']
+Y = swr * movie_master['inf_adj_fct']
 corr = X.corr(Y, method = 'spearman')
-print('Total Effect of Y on F, adjusted for inflation, : %.4f' % corr)
+print('Total Effect of Y on Swr, adjusted for inflation, : %.4f' % corr)
 
 X = movie_master['budget']
-Y = fwr
+Y = swr
 corr = X.corr(Y, method = 'spearman')
 print('Total Effect of B on F : %.4f' % corr)
 
 ## Second Week Revenue v/s Year
 X = movie_master['release_year']
-Y = fwr
+Y = swr
 corr = X.corr(Y, method = 'spearman')
 print('Total Effect of Y on F : %.4f' % corr)
 

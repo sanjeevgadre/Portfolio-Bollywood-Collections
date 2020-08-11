@@ -159,21 +159,77 @@ print(model.summary())
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LinearRegression
 from sklearn.preprocessing import StandardScaler
+import numpy as np
 
 X = movie_master.loc[:, ['budget', 'screens']]
 X = pd.concat([X, disti_share], axis = 1)
 X.columns = ['budget', 'screens','disti_share']
 Y = fwr
 
-StandardScaler().fit(X, Y)
+# Should not standardize when doing heteroscedacidy analysis as log transformations can lead to NANs
+# X = (X - X.mean())/X.std()
+# Y = (Y - Y.mean())/Y.std()
 
-X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size = 0.25)
+## Investigating heteroscedacity - studentized residuals v/s predicted values
+X = sm.add_constant(X)
+model = sm.OLS(Y, X).fit()
+Y_hat = model.predict(X)
+studentized_residuals = model.get_influence().resid_studentized_internal
 
-lr_model = LinearRegression(normalize = True)
-lr_model.fit(X_train, Y_train)
-print(lr_model.score(X_test, Y_test))
+plt.figure()
+Y_hat = Y_hat/10000000
+plt.scatter(Y_hat, studentized_residuals)
+plt.grid(True, which = 'major', axis = 'y')
+plt.ylabel('Studentized Residuals')
+plt.xlabel('Predicted First Week Revenue in Rs. crores')
+plt.show()
 
-Y_pred = lr_model.predict(X_test)
+#--> Clearly there is heteroscedacity. To eliminate heteroscedacity, we try fitting a model using the log values of Y
+Y = np.log(Y)
+model = sm.OLS(Y, X).fit()
+Y_hat = model.predict(X)
+studentized_residuals = model.get_influence().resid_studentized_internal
 
+plt.figure()
+plt.scatter(Y_hat, studentized_residuals)
+plt.grid(True, which = 'major', axis = 'y')
+plt.ylabel('Studentized Residuals')
+plt.xlabel('Predicted Log Value of First Week Revenue')
+plt.show()
 
+#--> Does eliminate heteroscedacity. Should use log values of Y for further investigation and modelling
 
+## Investigating likely non-linear response function - residuals v/s predicted values
+import seaborn as sns
+
+residuals = Y_hat - Y
+plt.figure(figsize = (15, 5))
+sns.set(style="whitegrid")
+axs = sns.residplot(Y_hat, residuals, lowess = True)
+axs.set_xlabel('Predicted Log Value of First Week Revenue')
+axs.set_ylabel('Residuals')
+plt.show()
+
+#--> Clearly a non-linear response function
+
+## Investigating Effect of Unit change in Causes on Response function
+X = movie_master.loc[:, ['budget', 'screens']]
+X = pd.concat([X, disti_share], axis = 1)
+X.columns = ['budget', 'screens','disti_share']
+Y = fwr
+
+# Standardizing Variables
+X_std = (X - X.mean())/X.std()
+Y_std = (Y - Y.mean())/Y.std()
+
+model = sm.OLS(Y_std, X_std).fit()
+print(model.summary())
+
+imp_unt_chg = model.params['budget']*Y.std()/X['budget'].std()
+print('Impact of unit increase in budget on first week revenue %.2f' % imp_unt_chg)
+
+imp_unt_chg = model.params['screens']*Y.std()/X['screens'].std()
+print('Impact of unit increase in screens on first week revenue %.2f' % imp_unt_chg)
+
+imp_unt_chg = model.params['disti_share']*Y.std()/X['disti_share'].std()
+print('Impact of unit increase in distributor share on first week revenue %.2f' % imp_unt_chg)

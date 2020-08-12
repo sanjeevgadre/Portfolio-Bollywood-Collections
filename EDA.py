@@ -511,5 +511,51 @@ plt.close()
 
 ### There are minimal differences between the top and bottom grossing movies when it comes to choice of genres.
 
+#%% Run Length
+df = weekly_master.groupby('movie_id').sum().iloc[:, 3:]
+run_length = df.apply(lambda x: np.count_nonzero(x), axis = 1)
 
+fig, ax = plt.subplots(ncols = 2, sharey = 'row', figsize = (15, 5))
+
+years = movie_master['release_year'].unique()
+col_names = ['Median: All', 'Median: Top Half', 'Median: Bottom Half']
+df = pd.DataFrame(data = None, index = years, columns = col_names)
+for year in years:
+    idx = movie_master.query('release_year == @year')['movie_id']
+    s = run_length[idx]
+    s.reset_index(drop = True, inplace = True)
+    mid = int(len(s)/2)
+    df.loc[df.index == year, col_names] = [s.median(), s[:mid].median(), s[mid:].median()]
+
+ax[0].plot(df.index, df['Median: All'])
+
+for name in col_names[-2:]:
+    ax[1].plot(df.index, df[name], label = name)
+        
+for i in range(len(ax)):
+    ax[i].grid()
+    ax[i].legend()
+
+ax[0].set_title('Median run length for top films of the year', fontweight = 'bold')
+ax[1].set_title('Median run length for top films of the year - Stratified by revenue', fontweight = 'bold')
+
+ax[0].set_ylabel('Run length in weeks', fontsize = 14)
+
+ax[0].set_xlabel('Year of Release', fontsize = 14)
+ax[1].set_xlabel('Year of Release', fontsize = 14)
+
+
+# Save before you Show. Show "creates" a new figure.
+plt.savefig('./figs/runlength.jpg', dpi = 'figure')
+
+plt.show()
+plt.close()
+
+### The median run length has reduced from 11 weeks in 1994 to 6.5 weeks in 2019, a drop of 4.5 weeks or ~41%
+
+### Median run length for films, with total gross revenue
+    ### above the median, reduced from 11 weeks in 1994 to 9 weeks in 2019, a drop of 2 weeks or ~18%
+    ### below the median, reduced from 10 weeks in 1994 to 5 weeks in 2019, a drop of 5 weeks or 50%
+    
+### Over the 26 year period, films have shortened in run length by about ~40%. This shortening is far more significant for the less successful films.
 

@@ -19,7 +19,7 @@ cpi_master = pd.read_csv('./data/CPI.csv')
 
 # Adjusting the first week revenue to account for entertainment and service tax
 fwr = movie_master['india-first-week'] * (movie_master['india-nett-gross']/movie_master['india-total-gross'])
-disti_share = movie_master['india-distributor-share']/movie_master['india-total-gross']
+# disti_share = movie_master['india-distributor-share']/movie_master['india-total-gross']
 
 #%% FIRST WEEK REVENUE
 ## First Week Revenue v/s Release Week

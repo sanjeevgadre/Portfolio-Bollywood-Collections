@@ -266,7 +266,7 @@ plt.close()
     
 ### Over the 26 year period, films have shortened in runtime by about 10%. This shortening is minimally different for more-successful and less-successful films.
 
-#%% Distributors' share
+#%% Exhibitors' share
 
 fig, ax = plt.subplots(ncols = 2, sharey = 'row', figsize = (15, 5))
 
@@ -274,9 +274,10 @@ years = movie_master['release_year'].unique()
 col_names = ['Median: All', 'Median: Top Half', 'Median: Bottom Half']
 df = pd.DataFrame(data = None, index = years, columns = col_names)
 for year in years:
-    s = movie_master.query('release_year == @year').loc[:, ['india-total-gross', 'india-distributor-share']]
+    s = movie_master.query('release_year == @year').loc[:, ['india-nett-gross', 'india-distributor-share']]
     s.reset_index(drop = True, inplace = True)
-    s = s['india-distributor-share']/s['india-total-gross']
+    s = s['india-distributor-share']/s['india-nett-gross']
+    s = 1 - s
     mid = int(len(s)/2)
     df.loc[df.index == year, col_names] = [s.median(), s[:mid].median(), s[mid:].median()]
 
@@ -289,8 +290,8 @@ for i in range(len(ax)):
     ax[i].grid()
     ax[i].legend()
 
-ax[0].set_title("Distributors' share of total gross for top films of the year", fontweight = 'bold')
-ax[1].set_title("Distributors' share of total gross for top films of the year - Stratified", fontweight = 'bold')
+ax[0].set_title("Exhibitors' share of total gross for top films of the year", fontweight = 'bold')
+ax[1].set_title("Exhibitors' share of total gross for top films of the year - Stratified", fontweight = 'bold')
 
 ax[0].set_ylabel('Share in Percentage', fontsize = 14)
 
@@ -298,20 +299,18 @@ ax[0].set_xlabel('Year of Release', fontsize = 14)
 ax[1].set_xlabel('Year of Release', fontsize = 14)
 
 # Save before you Show. Show "creates" a new figure.
-plt.savefig('./figs/disti_share.jpg', dpi = 'figure')
+plt.savefig('./figs/exhibitor_share.jpg', dpi = 'figure')
 
 plt.show()
 plt.close()
 
-### The median distributors' share has expanded from ~25% in 1994 to ~39% in 2019, an increase of 14 percentage points 
+### The median exhibitors' share has, over the years, broadly stayed constant in the region of 50-55%.
 
-### Median distributors' share for films with total gross revenue
-    ### above the median, expanded from ~29% in 1994 to ~40% in 2019, an increase of 11 percentage points
-    ### below the median, expanded from ~23% in 1994 to ~39% in 2019, an increase of 16 percentage points
+### Median exhibitors' share for films with total gross revenue
+    ### above the median, expanded from ~50% in 1994 to ~53% in 2019, an increase of just 3 percentage points
+    ### below the median, contraced from ~61% in 1994 to ~53% in 2019, a decrease of 8 percentage points
     
-### Over the 26 year period, distributors' share of total gross has significantly increased. Since around 2010, distributors are commanding the same share of a film's total gross irrespecive of how successful the film is. This isn't true of the period from 1994 to 2009, when the more successful films were parting with a much larger share of their total gross than the less successful films. One could draw possibly two conclusions:
-    ### In recent times, a film has very little leverage in determining the distributors' share of the total gross.
-    ### In recent times, a distributors' share likely has no impact on a film's fortunes. That is different from likely happened in the earlier times.
+### Over the 26 year period, the exhibitors' share of total nett collections has broadly remained the same.
 
 #%% First Week Revenue
 

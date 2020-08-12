@@ -51,7 +51,7 @@ plt.axhline(y = 0.3, color = 'b', linestyle='--')
 plt.axhline(y = -0.3, color='b', linestyle='--')
 plt.title('Spearman Rank Correlation: Budget v/s Genre')
 plt.grid(axis = 'y')
-plt.savefig('./figs/corr/feats/b_g_cond_y.jpg', dpi = 'figure')
+plt.savefig('./figs/feats//corr/b_g_cond_y.jpg', dpi = 'figure')
 plt.show()
 
 # Budget v/s Release Year
@@ -85,7 +85,7 @@ plt.axhline(y = 0.3, color = 'b', linestyle='--')
 plt.axhline(y = -0.3, color='b', linestyle='--')
 plt.title('Spearman Rank Correlation: Runtime v/s Genre')
 plt.grid(axis = 'y')
-plt.savefig('./figs/corr/feats/r_g_cond_y.jpg', dpi = 'figure')
+plt.savefig('./figs/feats/r_g_cond_y.jpg', dpi = 'figure')
 plt.show()
 
 ## Runtime v/s Budget
@@ -107,7 +107,7 @@ plt.axhline(y = np.mean(corr_lst), color='r', linestyle='-')
 plt.axhline(y = 0.3, color = 'b', linestyle='--')
 plt.title('Spearman Rank Correlation: Runtime v/s Budget')
 plt.grid(axis = 'y')
-plt.savefig('./figs/corr/feats/r_b_cond_y.jpg', dpi = 'figure')
+plt.savefig('./figs/feats/r_b_cond_y.jpg', dpi = 'figure')
 plt.show()
 plt.close()
 
@@ -144,7 +144,7 @@ plt.axhline(y = 0.3, color = 'b', linestyle='--')
 plt.axhline(y = -0.3, color = 'b', linestyle='--')
 plt.title('Spearman Correlation: Release Week v/s Genre')
 plt.grid(axis = 'y')
-plt.savefig('./figs/corr//feats/w_g_cond_y.jpg', dpi = 'figure')
+plt.savefig('./figs/feats/w_g_cond_y.jpg', dpi = 'figure')
 plt.show()
 plt.close()
 
@@ -166,7 +166,7 @@ plt.ylabel('p-values')
 plt.xlabel('Release Week')
 plt.xticks(np.arange(1, 54, 3))
 plt.title('p-value for Coefficeint of Runtime v/s Release Week')
-plt.savefig('./figs/corr/feats/w_r_cond_b_y.jpg')
+plt.savefig('./figs/feats/w_r_cond_b_y.jpg')
 plt.show()
 plt.close()
 
@@ -280,101 +280,101 @@ corr = movie_master['release_year'].corr(movie_master['screens'], method = 'spea
 print('%.4f' % corr)
 
 
-#%% EXHIBITOR SHARE
-exhibitor_share = 1- movie_master['india-distributor-share']/movie_master['india-nett-gross']
+# #%% EXHIBITOR SHARE
+# exhibitor_share = 1- movie_master['india-distributor-share']/movie_master['india-nett-gross']
 
-## Exhibitor Share v/s Release Week
-corr = movie_master['release_week'].corr(exhibitor_share, method = 'spearman')
-print('%.4f' % corr)
+# ## Exhibitor Share v/s Release Week
+# corr = movie_master['release_week'].corr(exhibitor_share, method = 'spearman')
+# print('%.4f' % corr)
 
-## Exhibitor Share v/s Genre conditioned on Year
-corr_lst = []
-years = movie_master['release_year'].unique()
-for year in years:
-    X = movie_master.loc[movie_master['release_year'] == year]['genre']
-    indx = movie_master.loc[movie_master['release_year'] == year].index
-    Y = exhibitor_share[indx]
-    corr = Y.corr(X, method = 'spearman')
-    corr_lst.append(corr)
+# ## Exhibitor Share v/s Genre conditioned on Year
+# corr_lst = []
+# years = movie_master['release_year'].unique()
+# for year in years:
+#     X = movie_master.loc[movie_master['release_year'] == year]['genre']
+#     indx = movie_master.loc[movie_master['release_year'] == year].index
+#     Y = exhibitor_share[indx]
+#     corr = Y.corr(X, method = 'spearman')
+#     corr_lst.append(corr)
 
-print('Average Spearman Correlation Coeff: %.4f' % np.mean(corr_lst))
+# print('Average Spearman Correlation Coeff: %.4f' % np.mean(corr_lst))
 
-plt.figure()
-plt.scatter(years, corr_lst)
-plt.ylim(-1, 1)
-plt.xlabel('Year of Release')
-plt.axhline(y = np.mean(corr_lst), color='r', linestyle='-')
-plt.axhline(y = 0.3, color = 'b', linestyle='--')
-plt.axhline(y = -0.3, color = 'b', linestyle='--')
-plt.title('Spearman Correlation: Exhibitor Share v/s Genre')
-plt.grid(axis = 'y')
-plt.savefig('./figs/corr/feats/e_g_cond_y.jpg', dpi = 'figure')
-plt.show()
-plt.close()
+# plt.figure()
+# plt.scatter(years, corr_lst)
+# plt.ylim(-1, 1)
+# plt.xlabel('Year of Release')
+# plt.axhline(y = np.mean(corr_lst), color='r', linestyle='-')
+# plt.axhline(y = 0.3, color = 'b', linestyle='--')
+# plt.axhline(y = -0.3, color = 'b', linestyle='--')
+# plt.title('Spearman Correlation: Exhibitor Share v/s Genre')
+# plt.grid(axis = 'y')
+# plt.savefig('./figs/corr/feats/e_g_cond_y.jpg', dpi = 'figure')
+# plt.show()
+# plt.close()
 
-## Exhibitor Share v/s Screens conditioned on Budget
-X = movie_master.loc[:, ['budget', 'screens']]
-Y = exhibitor_share
-X = (X - X.mean())/X.std()
-Y = (Y - Y.mean())/Y.std()
+# ## Exhibitor Share v/s Screens conditioned on Budget
+# X = movie_master.loc[:, ['budget', 'screens']]
+# Y = exhibitor_share
+# X = (X - X.mean())/X.std()
+# Y = (Y - Y.mean())/Y.std()
 
-model = sm.OLS(Y, X).fit()
-print(model.summary())
+# model = sm.OLS(Y, X).fit()
+# print(model.summary())
 
-## Exhibitor Share v/s Runtime conditioned on Year and Budget
-years = movie_master['release_year'].unique()
-p_val_lst = []
-for year in years:
-    X = movie_master.loc[movie_master['release_year'] == year, ['budget', 'runtime']]
-    indx = movie_master.loc[movie_master['release_year'] == year].index
-    Y = exhibitor_share[indx]
-    X = (X - X.mean())/X.std()
-    Y = (Y - Y.mean())/Y.std()
+# ## Exhibitor Share v/s Runtime conditioned on Year and Budget
+# years = movie_master['release_year'].unique()
+# p_val_lst = []
+# for year in years:
+#     X = movie_master.loc[movie_master['release_year'] == year, ['budget', 'runtime']]
+#     indx = movie_master.loc[movie_master['release_year'] == year].index
+#     Y = exhibitor_share[indx]
+#     X = (X - X.mean())/X.std()
+#     Y = (Y - Y.mean())/Y.std()
     
-    model = sm.OLS(Y, X).fit()
+#     model = sm.OLS(Y, X).fit()
     
-    p_val = model.pvalues['runtime']
-    p_val_lst.append(p_val)
+#     p_val = model.pvalues['runtime']
+#     p_val_lst.append(p_val)
     
-plt.figure()
-plt.scatter(years, p_val_lst)
-plt.ylim(-0.1, 1)
-plt.xlabel('Year of Release')
-plt.ylabel('p values')
-plt.axhline(y = 0.05, color = 'r', linestyle='--')
-plt.title('p-values for Regression Coefficient: Exhibitor Share v/s Runtime')
-plt.grid(axis = 'y')
-plt.savefig('./figs/corr/feats/e_r_cond_y_b.jpg', dpi = 'figure')
-plt.show()
-plt.close()
+# plt.figure()
+# plt.scatter(years, p_val_lst)
+# plt.ylim(-0.1, 1)
+# plt.xlabel('Year of Release')
+# plt.ylabel('p values')
+# plt.axhline(y = 0.05, color = 'r', linestyle='--')
+# plt.title('p-values for Regression Coefficient: Exhibitor Share v/s Runtime')
+# plt.grid(axis = 'y')
+# plt.savefig('./figs/corr/feats/e_r_cond_y_b.jpg', dpi = 'figure')
+# plt.show()
+# plt.close()
 
-## Exhibitor Share v/s Budget
-     ## conditioned on Year
-corr_lst = []
-years = movie_master['release_year'].unique()
-for year in years:
-    X = movie_master.loc[movie_master['release_year'] == year]['budget']
-    indx = movie_master.loc[movie_master['release_year'] == year].index
-    Y = exhibitor_share[indx]
-    corr = Y.corr(X, method = 'spearman')
-    corr_lst.append(corr)
+# ## Exhibitor Share v/s Budget
+#      ## conditioned on Year
+# corr_lst = []
+# years = movie_master['release_year'].unique()
+# for year in years:
+#     X = movie_master.loc[movie_master['release_year'] == year]['budget']
+#     indx = movie_master.loc[movie_master['release_year'] == year].index
+#     Y = exhibitor_share[indx]
+#     corr = Y.corr(X, method = 'spearman')
+#     corr_lst.append(corr)
 
-print('Average Spearman Correlation Coeff: %.4f' % np.mean(corr_lst))
+# print('Average Spearman Correlation Coeff: %.4f' % np.mean(corr_lst))
 
-plt.figure()
-plt.scatter(years, corr_lst)
-plt.ylim(-1, 0)
-plt.xlabel('Year of Release')
-plt.axhline(y = np.mean(corr_lst), color='r', linestyle='-')
-plt.axhline(y = 0.3, color = 'b', linestyle='--')
-plt.axhline(y = -0.3, color = 'b', linestyle='--')
-plt.title('Spearman Correlation: Exhibitor Share v/s Budget')
-plt.grid(axis = 'y')
-plt.savefig('./figs/corr/feats/e_b_cond_y.jpg', dpi = 'figure')
-plt.show()
-plt.close()
+# plt.figure()
+# plt.scatter(years, corr_lst)
+# plt.ylim(-1, 0)
+# plt.xlabel('Year of Release')
+# plt.axhline(y = np.mean(corr_lst), color='r', linestyle='-')
+# plt.axhline(y = 0.3, color = 'b', linestyle='--')
+# plt.axhline(y = -0.3, color = 'b', linestyle='--')
+# plt.title('Spearman Correlation: Exhibitor Share v/s Budget')
+# plt.grid(axis = 'y')
+# plt.savefig('./figs/corr/feats/e_b_cond_y.jpg', dpi = 'figure')
+# plt.show()
+# plt.close()
 
-## Exhibitor Share v/s Release Year
-corr = movie_master['release_year'].corr(exhibitor_share, method = 'spearman')
-print('%.4f' % corr)
+# ## Exhibitor Share v/s Release Year
+# corr = movie_master['release_year'].corr(exhibitor_share, method = 'spearman')
+# print('%.4f' % corr)
 

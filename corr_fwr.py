@@ -47,20 +47,9 @@ plt.axhline(y = 0.3, color = 'b', linestyle='--')
 plt.axhline(y = -0.3, color = 'b', linestyle='--')
 plt.title('Spearman Correlation: First Week Revenue v/s Genre')
 plt.grid(axis = 'y')
-plt.savefig('./figs/corr/f_g_cond_y.jpg', dpi = 'figure')
+plt.savefig('./figs/fwr/f_g_cond_y.jpg', dpi = 'figure')
 plt.show()
 plt.close()
-
-## First Week Revenue v/s Distributor Share conditioned on Budget
-disti_share = movie_master['india-distributor-share']/movie_master['india-total-gross']
-X = pd.concat([movie_master['budget'], disti_share], axis = 1)
-X.columns = ['budget', 'disti_share']
-Y = fwr
-X = (X - X.mean())/X.std()
-Y = (Y - Y.mean())/Y.std()
-
-model = sm.OLS(Y, X).fit()
-print(model.summary())
 
 ## First Week Revenue v/s Screens conditioned on Budget
 X = movie_master.loc[:, ['budget', 'screens']]
@@ -89,7 +78,7 @@ plt.xlabel('Year of Release')
 plt.axhline(y = 0.05, color='r', linestyle='--')
 plt.title('p-values for Regression Coefficient: First Week Revenue v/s Runtime')
 plt.grid(axis = 'y')
-plt.savefig('./figs/corr/f_r_cond_y_b.jpg', dpi = 'figure')
+plt.savefig('./figs/fwr/f_r_cond_y_b.jpg', dpi = 'figure')
 plt.show()
 plt.close()
 
@@ -113,7 +102,7 @@ plt.axhline(y = np.mean(corr_lst), color='r', linestyle='-')
 plt.axhline(y = 0.3, color = 'b', linestyle='--')
 plt.title('Spearman Correlation: First Week Revenue v/s Budget')
 plt.grid(axis = 'y')
-plt.savefig('./figs/corr/f_b_cond_y_i.jpg', dpi = 'figure')
+plt.savefig('./figs/fwr/f_b_cond_y_i.jpg', dpi = 'figure')
 plt.show()
 plt.close()
 
@@ -136,18 +125,13 @@ print('Total Effect of Y on F : %.4f' % corr)
 
 #%% First Week Models - statsmodels
 X = movie_master.loc[:, ['budget', 'screens']]
-X = pd.concat([X, disti_share], axis = 1)
-X.columns = ['budget', 'screens','disti_share']
 X = sm.add_constant(X)
 Y = fwr
-
 model = sm.OLS(Y, X).fit()
 print(model.summary())
 
 
 X = movie_master.loc[:, ['budget', 'screens']]
-X = pd.concat([X, disti_share], axis = 1)
-X.columns = ['budget', 'screens','disti_share']
 X = (X - X.mean())/X.std()
 Y = fwr
 Y = (Y - Y.mean())/Y.std()
@@ -156,14 +140,10 @@ model = sm.OLS(Y, X).fit()
 print(model.summary())
 
 #%% First Week Models - sklearn
-from sklearn.model_selection import train_test_split
-from sklearn.linear_model import LinearRegression
-from sklearn.preprocessing import StandardScaler
 import numpy as np
+import seaborn as sns
 
 X = movie_master.loc[:, ['budget', 'screens']]
-X = pd.concat([X, disti_share], axis = 1)
-X.columns = ['budget', 'screens','disti_share']
 Y = fwr
 
 # Should not standardize when doing heteroscedacidy analysis as log transformations can lead to NANs
@@ -200,7 +180,6 @@ plt.show()
 #--> Does eliminate heteroscedacity. Should use log values of Y for further investigation and modelling
 
 ## Investigating likely non-linear response function - residuals v/s predicted values
-import seaborn as sns
 
 residuals = Y_hat - Y
 plt.figure(figsize = (15, 5))
@@ -214,8 +193,6 @@ plt.show()
 
 ## Investigating Effect of Unit change in Causes on Response function
 X = movie_master.loc[:, ['budget', 'screens']]
-X = pd.concat([X, disti_share], axis = 1)
-X.columns = ['budget', 'screens','disti_share']
 Y = fwr
 
 # Standardizing Variables
@@ -231,5 +208,50 @@ print('Impact of unit increase in budget on first week revenue %.2f' % imp_unt_c
 imp_unt_chg = model.params['screens']*Y.std()/X['screens'].std()
 print('Impact of unit increase in screens on first week revenue %.2f' % imp_unt_chg)
 
-imp_unt_chg = model.params['disti_share']*Y.std()/X['disti_share'].std()
-print('Impact of unit increase in distributor share on first week revenue %.2f' % imp_unt_chg)
+#%% First Week Revenue Prediction Models - Tree Based
+from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor
+from sklearn.model_selection import GridSearchCV
+
+X = movie_master.loc[:, ['budget', 'screens']]
+Y = fwr
+
+rf_est = RandomForestRegressor(random_state = 1970)
+gb_est = GradientBoostingRegressor(random_state = 1970)
+
+rf_param_grid = {'n_estimators' : [100, 500, 2500], 
+                 'max_features' : [0.33, 0.66, 1]}
+rf_mod = GridSearchCV(rf_est, param_grid = rf_param_grid, scoring = 'neg_root_mean_squared_error', n_jobs = -1,
+                      error_score = 'raise').fit(X, Y)
+
+print('The best fit Random Forest Regressor reports a cross-validated RMSE of %.0f' % -rf_mod.best_score_)
+print('The parameters for the best fit model are %s' % rf_mod.best_params_)
+
+gb_param_grid = {'n_estimators' : [100, 500, 2500, 10000], 'learning_rate' : [0.01, 0.001], 
+                 'max_depth' : [1, 2, 4], 'max_features' : [0.33, 0.66, 1]}
+gb_mod = GridSearchCV(gb_est, param_grid = gb_param_grid, scoring = 'neg_root_mean_squared_error', n_jobs = -1, 
+                      error_score = 'raise').fit(X, Y)
+
+print('The best fit Gradient Boosted Tree Regressor reports a cross-validated RMSE of %.0f' % -gb_mod.best_score_)
+print('The parameters for the best fit model are %s' % gb_mod.best_params_)
+
+## The Boosted Tree Ensemble provides a better model (lower RMSE)
+
+#%% First Week Revenue Prediction Model Performance
+from sklearn.model_selection import train_test_split
+
+X_train, X_test, Y_train, Y_test = train_test_split(X, Y, random_state = 1970)
+
+gb_est = GradientBoostingRegressor(random_state = 1970).set_params(**gb_mod.best_params_)
+gb_mod = gb_est.fit(X_train, Y_train)
+Y_test_hat = gb_mod.predict(X_test)
+err = np.abs(Y_test_hat - Y_test)/Y_test
+
+plt.figure(figsize = (13,7))
+# plt.scatter(np.arange(1, len(Y_test) + 1), Y_test, color = "blue")
+# plt.scatter(np.arange(1, len(Y_test) + 1), Y_test_hat, color = "red")
+#plt.scatter(np.arange(1, len(Y_test) + 1), err, color = "red")
+plt.hist(err, bins = 500, histtype = 'step', cumulative = True, density = True)
+plt.xticks(np.arange(0, 8.2, .25), rotation = 45, fontsize = 10)
+plt.yticks(np.arange(0, 1.1, .1), rotation = 45, fontsize = 10)
+plt.grid(b= True, axis = 'both', which = 'both')
+plt.show()

@@ -10,8 +10,13 @@ Created on Fri Jul 17 17:22:06 2020
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
-from scipy import stats
 import statsmodels.api as sm
+import numpy as np
+import seaborn as sns
+from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor
+from sklearn.model_selection import GridSearchCV
+from sklearn.model_selection import train_test_split
+
 
 #%% Loading Data
 movie_master = pd.read_pickle('./data/movie_master_en.pkl')
@@ -19,7 +24,6 @@ cpi_master = pd.read_csv('./data/CPI.csv')
 
 # Adjusting the first week revenue to account for entertainment and service tax
 fwr = movie_master['india-first-week'] * (movie_master['india-nett-gross']/movie_master['india-total-gross'])
-# disti_share = movie_master['india-distributor-share']/movie_master['india-total-gross']
 
 #%% FIRST WEEK REVENUE
 ## First Week Revenue v/s Release Week
@@ -140,15 +144,11 @@ model = sm.OLS(Y, X).fit()
 print(model.summary())
 
 #%% First Week Models - sklearn
-import numpy as np
-import seaborn as sns
 
 X = movie_master.loc[:, ['budget', 'screens']]
 Y = fwr
 
 # Should not standardize when doing heteroscedacidy analysis as log transformations can lead to NANs
-# X = (X - X.mean())/X.std()
-# Y = (Y - Y.mean())/Y.std()
 
 ## Investigating heteroscedacity - studentized residuals v/s predicted values
 X = sm.add_constant(X)
@@ -193,7 +193,7 @@ plt.show()
 
 ## Investigating Effect of Unit change in Causes on Response function
 X = movie_master.loc[:, ['budget', 'screens']]
-Y = fwr
+Y = fwr                # Do we need to eliminate heteroscedacity
 
 # Standardizing Variables
 X_std = (X - X.mean())/X.std()
@@ -203,14 +203,14 @@ model = sm.OLS(Y_std, X_std).fit()
 print(model.summary())
 
 imp_unt_chg = model.params['budget']*Y.std()/X['budget'].std()
+# imp_unt_chg = np.exp(imp_unt_chg)
 print('Impact of unit increase in budget on first week revenue %.2f' % imp_unt_chg)
 
 imp_unt_chg = model.params['screens']*Y.std()/X['screens'].std()
+# imp_unt_chg = np.exp(imp_unt_chg)
 print('Impact of unit increase in screens on first week revenue %.2f' % imp_unt_chg)
 
 #%% First Week Revenue Prediction Models - Tree Based
-from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor
-from sklearn.model_selection import GridSearchCV
 
 X = movie_master.loc[:, ['budget', 'screens']]
 Y = fwr
@@ -218,6 +218,7 @@ Y = fwr
 rf_est = RandomForestRegressor(random_state = 1970)
 gb_est = GradientBoostingRegressor(random_state = 1970)
 
+## Using RMSE as evaluation metric
 rf_param_grid = {'n_estimators' : [100, 500, 2500], 
                  'max_features' : [0.33, 0.66, 1]}
 rf_mod = GridSearchCV(rf_est, param_grid = rf_param_grid, scoring = 'neg_root_mean_squared_error', n_jobs = -1,
@@ -226,7 +227,7 @@ rf_mod = GridSearchCV(rf_est, param_grid = rf_param_grid, scoring = 'neg_root_me
 print('The best fit Random Forest Regressor reports a cross-validated RMSE of %.0f' % -rf_mod.best_score_)
 print('The parameters for the best fit model are %s' % rf_mod.best_params_)
 
-gb_param_grid = {'n_estimators' : [100, 500, 2500, 10000], 'learning_rate' : [0.01, 0.001], 
+gb_param_grid = {'n_estimators' : [100, 500, 2500], 'learning_rate' : [0.01, 0.001], 
                  'max_depth' : [1, 2, 4], 'max_features' : [0.33, 0.66, 1]}
 gb_mod = GridSearchCV(gb_est, param_grid = gb_param_grid, scoring = 'neg_root_mean_squared_error', n_jobs = -1, 
                       error_score = 'raise').fit(X, Y)
@@ -236,22 +237,54 @@ print('The parameters for the best fit model are %s' % gb_mod.best_params_)
 
 ## The Boosted Tree Ensemble provides a better model (lower RMSE)
 
-#%% First Week Revenue Prediction Model Performance
-from sklearn.model_selection import train_test_split
+# Prediction Model Performance
 
 X_train, X_test, Y_train, Y_test = train_test_split(X, Y, random_state = 1970)
 
 gb_est = GradientBoostingRegressor(random_state = 1970).set_params(**gb_mod.best_params_)
 gb_mod = gb_est.fit(X_train, Y_train)
-Y_test_hat = gb_mod.predict(X_test)
-err = np.abs(Y_test_hat - Y_test)/Y_test
+print('The R^2 for the model using test data: %.4f' % gb_mod.score(X_test, Y_test))
 
-plt.figure(figsize = (13,7))
-# plt.scatter(np.arange(1, len(Y_test) + 1), Y_test, color = "blue")
-# plt.scatter(np.arange(1, len(Y_test) + 1), Y_test_hat, color = "red")
-#plt.scatter(np.arange(1, len(Y_test) + 1), err, color = "red")
-plt.hist(err, bins = 500, histtype = 'step', cumulative = True, density = True)
-plt.xticks(np.arange(0, 8.2, .25), rotation = 45, fontsize = 10)
-plt.yticks(np.arange(0, 1.1, .1), rotation = 45, fontsize = 10)
-plt.grid(b= True, axis = 'both', which = 'both')
-plt.show()
+Y_test_hat = gb_mod.predict(X_test)
+err_rmse = (Y_test_hat - Y_test)/Y_test
+
+# plt.figure(figsize = (13,7))
+# plt.hist(err_rmse, bins = 500, histtype = 'step', cumulative = True, density = True)
+# plt.xticks(np.arange(0, err_rmse.max() + 0.3, .25), rotation = 45, fontsize = 10)
+# plt.yticks(np.arange(0, 1.1, .1), rotation = 45, fontsize = 10)
+# plt.grid(b= True, axis = 'both', which = 'both')
+# plt.show()
+
+#%%
+
+## Using MAE as evaluation metric
+rf_param_grid = {'n_estimators' : [100, 500, 2500], 
+                 'max_features' : [0.33, 0.66, 1]}
+rf_mod = GridSearchCV(rf_est, param_grid = rf_param_grid, scoring = 'neg_mean_absolute_error', n_jobs = -1,
+                      error_score = 'raise').fit(X, Y)
+
+print('The best fit Random Forest Regressor reports a cross-validated MAE of %.0f' % -rf_mod.best_score_)
+print('The parameters for the best fit model are %s' % rf_mod.best_params_)
+
+gb_param_grid = {'n_estimators' : [100, 500, 2500], 'learning_rate' : [0.01, 0.001], 
+                 'max_depth' : [1, 2, 4], 'max_features' : [0.33, 0.66, 1]}
+gb_mod = GridSearchCV(gb_est, param_grid = gb_param_grid, scoring = 'neg_mean_absolute_error', n_jobs = -1, 
+                      error_score = 'raise').fit(X, Y)
+
+print('The best fit Gradient Boosted Tree Regressor reports a cross-validated MAE of %.0f' % -gb_mod.best_score_)
+print('The parameters for the best fit model are %s' % gb_mod.best_params_)
+
+## The Random Forest Ensemble provides a better model (lower MAE)
+
+
+# Prediction Model Performance
+X_train, X_test, Y_train, Y_test = train_test_split(X, Y, random_state = 1970)
+
+rf_est = RandomForestRegressor(random_state = 1970).set_params(**rf_mod.best_params_)
+rf_mod = rf_est.fit(X_train, Y_train)
+print('The R^2 for the model using test data: %.4f' % rf_mod.score(X_test, Y_test))
+
+Y_test_hat = rf_mod.predict(X_test)
+err_mae = np.abs(Y_test_hat - Y_test)/Y_test
+
+## The MAE model's predictions are less off the mark than RMSE model projections

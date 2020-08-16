@@ -29,12 +29,11 @@ df = weekly_master.groupby('movie_id').sum().iloc[:, 3:]
 run_length = df.apply(lambda x: np.count_nonzero(x), axis = 1)
 run_length.reset_index(drop = True, inplace = True)
 
-#%% FOOTFALLS
-## Footfalls v/s Release Week
+#%% Footfalls v/s Release Week
 corr = movie_master['release_week'].corr(movie_master['india-footfalls'], method = 'spearman')
 print('%.4f' % corr)
 
-## Footfalls v/s Genre conditioned on Year
+#%% Footfalls v/s Genre conditioned on Year
 corr_lst = []
 years = movie_master['release_year'].unique()
 for year in years:
@@ -59,7 +58,7 @@ plt.savefig('./figs/ff/02_COR.jpg', dpi = 'figure')
 plt.show()
 plt.close()
 
-## Footfalls v/s Run Length conditioned on Year, Screens and First Week Revenue
+#%% Footfalls v/s Run Length conditioned on Year, Screens and First Week Revenue
 pvalue_lst = []
 years = movie_master['release_year'].unique()
 for year in years:
@@ -83,7 +82,7 @@ plt.savefig('./figs/ff/03_COR.jpg', dpi = 'figure')
 plt.show()
 plt.close()
 
-## Footfalls v/s First Week Revenue conditioned on Budget and Screens
+#%% Footfalls v/s First Week Revenue conditioned on Budget and Screens
 X = movie_master.loc[:, ['budget', 'screens']]
 X = pd.concat([X, fwr], axis = 1)
 X.columns = ['budget', 'screens', 'fwr']
@@ -94,7 +93,7 @@ Y = (Y - Y.mean())/Y.std()
 model = sm.OLS(Y, X).fit()
 print(model.summary())
 
-## Footfalls v/s Screens conditioned on Budget
+#%% Footfalls v/s Screens conditioned on Budget
 X = movie_master.loc[:, ['budget', 'screens']]
 Y = movie_master['india-footfalls']
 X = (X - X.mean())/X.std()
@@ -103,7 +102,7 @@ Y = (Y - Y.mean())/Y.std()
 model = sm.OLS(Y, X).fit()
 print(model.summary())
 
-## Footfalls v/s Runtime conditioned on Budget and Year
+#%% Footfalls v/s Runtime conditioned on Budget and Year
 pvalue_lst = []
 years = movie_master['release_year'].unique()
 for year in years:
@@ -125,7 +124,7 @@ plt.savefig('./figs/ff/06_COR.jpg', dpi = 'figure')
 plt.show()
 plt.close()
 
-## Footfalls v/s Budget, conditioned on Year
+#%% Footfalls v/s Budget, conditioned on Year
 years = movie_master['release_year'].unique()
 corr_lst = []
 for year in years:
@@ -149,25 +148,25 @@ plt.savefig('./figs/ff/07_COR.jpg', dpi = 'figure')
 plt.show()
 plt.close()
 
-## Footfalls v/s Year
+#%% Footfalls v/s Year
 X = movie_master['release_year']
 Y = movie_master['india-footfalls']
 corr = X.corr(Y, method = 'spearman')
 print('Total Effect of Y on F : %.4f' % corr)
 
 #%% Preliminary Stats Models
-X = movie_master.loc[:, ['release_year', 'screens']]
+X = movie_master.loc[:, ['release_year', 'budget', 'screens']]
 X = pd.concat([X, fwr], axis = 1)
-X.columns = ['release_year', 'screens', 'fwr']
+X.columns = ['release_year', 'budget', 'screens', 'fwr']
 X = sm.add_constant(X)
 Y = movie_master['india-footfalls']
 model = sm.OLS(Y, X).fit()
 print(model.summary())
 
 
-X = movie_master.loc[:, ['release_year', 'screens']]
+X = movie_master.loc[:, ['release_year', 'budget', 'screens']]
 X = pd.concat([X, fwr], axis = 1)
-X.columns = ['release_year', 'screens', 'fwr']
+X.columns = ['release_year', 'budget', 'screens', 'fwr']
 X.iloc[:, 1:3] = (X.iloc[:, 1:3] - X.iloc[:, 1:3].mean())/X.iloc[:, 1:3].std()
 Y = movie_master['india-footfalls']
 Y = (Y - Y.mean())/Y.std()
@@ -192,14 +191,28 @@ Y_hat = model.predict(X)
 studentized_residuals = model.get_influence().resid_studentized_internal
 
 plt.figure()
-Y_hat = Y_hat
+Y_hat = Y_hat/1000000
 plt.scatter(Y_hat, studentized_residuals)
 plt.grid(True, which = 'major', axis = 'y')
 plt.ylabel('Studentized Residuals')
-plt.xlabel('Predicted Footfalls in Weeks')
+plt.xlabel('Predicted Footfalls')
 plt.show()
 
-#--> Clearly there is no heteroscedacity. 
+#--> Clearly there is heteroscedacity. To eliminate heteroscedacity, we try fitting a model using the log values of Y
+Y = np.log(Y)
+model = sm.OLS(Y, X).fit()
+Y_hat = model.predict(X)
+studentized_residuals = model.get_influence().resid_studentized_internal
+
+plt.figure()
+plt.scatter(Y_hat, studentized_residuals)
+plt.grid(True, which = 'major', axis = 'y')
+plt.ylabel('Studentized Residuals')
+plt.xlabel('Predicted Log Value of Footfalls')
+plt.show()
+
+#--> Does eliminate heteroscedacity. Should use log values of Y for further investigation and modelling
+
 
 ## Investigating likely non-linear response function - residuals v/s predicted values
 
@@ -207,17 +220,17 @@ residuals = Y_hat - Y
 plt.figure(figsize = (15, 5))
 sns.set(style="whitegrid")
 axs = sns.residplot(Y_hat, residuals, lowess = True)
-axs.set_xlabel('Predicted Footfalls in Weeks')
+axs.set_xlabel('Predicted Log Values of Footfalls')
 axs.set_ylabel('Residuals')
 plt.show()
 
 #--> Perhaps a non-linear response function
 
 
-#%% Footfalls - Tree Based Prediction Model
-X = movie_master.loc[:, ['release_year', 'screens']]
+#%% Footfalls Prediction Models - Tree Based
+X = movie_master.loc[:, ['release_year', 'budget', 'screens']]
 X = pd.concat([X, fwr], axis = 1)
-X.columns = ['release_year', 'screens', 'fwr']
+X.columns = ['release_year', 'budget', 'screens', 'fwr']
 Y = movie_master['india-footfalls']
 
 rf_est = RandomForestRegressor(random_state = 1970)
@@ -226,7 +239,8 @@ gb_est = GradientBoostingRegressor(random_state = 1970)
 ## Using MAE as evaluation metric
 rf_param_grid = {'n_estimators' : [100, 500, 2500], 
                  'max_features' : [0.33, 0.66, 1]}
-rf_mod = GridSearchCV(rf_est, param_grid = rf_param_grid, scoring = 'neg_mean_absolute_error', n_jobs = -1,
+rf_mod = GridSearchCV(rf_est, param_grid = rf_param_grid, 
+                      scoring = 'neg_mean_absolute_error', n_jobs = -1,
                       error_score = 'raise').fit(X, Y)
 
 print('The best fit Random Forest Regressor reports a cross-validated MAE of %.4f' % -rf_mod.best_score_)
@@ -234,7 +248,8 @@ print('The parameters for the best fit model are %s' % rf_mod.best_params_)
 
 gb_param_grid = {'n_estimators' : [100, 500, 2500], 'learning_rate' : [0.01, 0.001], 
                  'max_depth' : [1, 2, 4], 'max_features' : [0.33, 0.66, 1]}
-gb_mod = GridSearchCV(gb_est, param_grid = gb_param_grid, scoring = 'neg_mean_absolute_error', n_jobs = -1, 
+gb_mod = GridSearchCV(gb_est, param_grid = gb_param_grid, 
+                      scoring = 'neg_mean_absolute_error', n_jobs = -1, 
                       error_score = 'raise').fit(X, Y)
 
 print('The best fit Gradient Boosted Tree Regressor reports a cross-validated MAE of %.4f' % -gb_mod.best_score_)
@@ -242,7 +257,7 @@ print('The parameters for the best fit model are %s' % gb_mod.best_params_)
 
 ## Boosted Tree Ensemble delivers beter results (lower MAE)
 
-#%% Prediction Model Performance
+#%% Footfalls Prediction Model Performance
 
 X_train, X_test, Y_train, Y_test = train_test_split(X, Y, random_state = 1970)
 
@@ -251,7 +266,11 @@ gb_mod = gb_est.fit(X_train, Y_train)
 print('The R^2 for the model using test data: %.4f' % gb_mod.score(X_test, Y_test))
 
 Y_test_hat = gb_mod.predict(X_test)
-Y_test_hat = np.round(Y_test_hat)
 
-err_mae = (Y_test_hat - Y_test)
+err_mae = np.abs(Y_test - Y_test_hat)/Y_test
 
+intervals = np.arange(0.25, 0.56, 0.1)
+for interval in intervals:
+    cnt = len([x for x in err_mae if x < interval])
+    cnt = 100*cnt/len(err_mae)
+    print('Percentage of estimates for test set that are off by less than %.0f%% from true value: %.2f' % (100*interval, cnt))

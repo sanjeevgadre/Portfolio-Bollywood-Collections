@@ -26,21 +26,20 @@ fwr = movie_master['india-first-week'] * (movie_master['india-nett-gross']/movie
 
 # Getting the run length of films
 df = weekly_master.groupby('movie_id').sum().iloc[:, 3:]
-run_length = df.apply(lambda x: np.count_nonzero(x), axis = 1)
-run_length.reset_index(drop = True, inplace = True)
+run_len = df.apply(lambda x: np.count_nonzero(x), axis = 1)
+run_len.reset_index(drop = True, inplace = True)
 
-#%% RUN LENGTH
-## Run Length v/s Release Week
-corr = movie_master['release_week'].corr(run_length, method = 'spearman')
+#%% Run Length v/s Release Week
+corr = movie_master['release_week'].corr(run_len, method = 'spearman')
 print('%.4f' % corr)
 
-## Run Length v/s Genre conditioned on Year
+#%% Run Length v/s Genre conditioned on Year
 corr_lst = []
 years = movie_master['release_year'].unique()
 for year in years:
     X = movie_master.loc[movie_master['release_year'] == year]['genre']
     indx = movie_master.loc[movie_master['release_year'] == year].index
-    Y = run_length[indx]
+    Y = run_len[indx]
     corr = Y.corr(X, method = 'spearman')
     corr_lst.append(corr)
 
@@ -59,33 +58,33 @@ plt.savefig('./figs/runlen/02_COR.jpg', dpi = 'figure')
 plt.show()
 plt.close()
 
-## Run Length v/s First Week Revenue conditioned on Budget and Screens
+#%% Run Length v/s First Week Revenue conditioned on Budget and Screens
 X = movie_master.loc[:, ['budget', 'screens']]
 X = pd.concat([X, fwr], axis = 1)
 X.columns = ['budget', 'screens', 'fwr']
-Y = run_length
+Y = run_len
 X = (X - X.mean())/X.std()
 Y = (Y - Y.mean())/Y.std()
 
 model = sm.OLS(Y, X).fit()
 print(model.summary())
 
-## Run Length v/s Screens conditioned on Budget
+#%% Run Length v/s Screens conditioned on Budget
 X = movie_master.loc[:, ['budget', 'screens']]
-Y = run_length
+Y = run_len
 X = (X - X.mean())/X.std()
 Y = (Y - Y.mean())/Y.std()
 
 model = sm.OLS(Y, X).fit()
 print(model.summary())
 
-## Run Length v/s Runtime conditioned on Budget and Year
+#%% Run Length v/s Runtime conditioned on Budget and Year
 pvalue_lst = []
 years = movie_master['release_year'].unique()
 for year in years:
     X = movie_master.loc[movie_master['release_year'] == year, ['budget', 'runtime']]
     indx = movie_master.loc[movie_master['release_year'] == year].index
-    Y = run_length[indx]
+    Y = run_len[indx]
     X = (X - X.mean())/X.std()
     Y = (Y - Y.mean())/Y.std()
     model = sm.OLS(Y, X).fit()
@@ -101,13 +100,13 @@ plt.savefig('./figs/runlen/05_COR.jpg', dpi = 'figure')
 plt.show()
 plt.close()
 
-## Run Length v/s Budget, conditioned on Year
+#%% Run Length v/s Budget, conditioned on Year
 years = movie_master['release_year'].unique()
 corr_lst = []
 for year in years:
     X = movie_master.loc[movie_master['release_year'] == year, 'budget']
     indx = movie_master.loc[movie_master['release_year'] == year].index
-    Y = run_length[indx]
+    Y = run_len[indx]
     corr = X.corr(Y, method = 'spearman')
     corr_lst.append(corr)
     
@@ -125,9 +124,9 @@ plt.savefig('./figs/runlen/06_COR.jpg', dpi = 'figure')
 plt.show()
 plt.close()
 
-## Run Length v/s Year
+#%% Run Length v/s Year
 X = movie_master['release_year']
-Y = run_length
+Y = run_len
 corr = X.corr(Y, method = 'spearman')
 print('Total Effect of Y on F : %.4f' % corr)
 
@@ -136,7 +135,7 @@ X = movie_master.loc[:, ['release_year', 'screens']]
 X = pd.concat([X, fwr], axis = 1)
 X.columns = ['release_year', 'screens', 'fwr']
 X = sm.add_constant(X)
-Y = run_length
+Y = run_len
 model = sm.OLS(Y, X).fit()
 print(model.summary())
 
@@ -145,19 +144,19 @@ X = movie_master.loc[:, ['release_year', 'screens']]
 X = pd.concat([X, fwr], axis = 1)
 X.columns = ['release_year', 'screens', 'fwr']
 X.iloc[:, 1:3] = (X.iloc[:, 1:3] - X.iloc[:, 1:3].mean())/X.iloc[:, 1:3].std()
-Y = run_length
+Y = run_len
 Y = (Y - Y.mean())/Y.std()
 
 model = sm.OLS(Y, X).fit()
 print(model.summary())
 
 
-#%% Run Length - Features of Likely Predictive Model
+#%% Run Length Models - Investigating Likely Response Functin
 
 X = movie_master.loc[:, ['release_year', 'budget', 'screens']]
 X = pd.concat([X, fwr], axis = 1)
 X.columns = ['release_year', 'budget', 'screens', 'fwr']
-Y = run_length
+Y = run_len
 
 # Should not standardize when doing heteroscedacidy analysis as log transformations can lead to NANs
 
@@ -190,11 +189,11 @@ plt.show()
 #--> Perhaps a non-linear response function
 
 
-#%% Run Length - Tree Based Prediction Model
+#%% Run Length Prediction Models - Tree Based
 X = movie_master.loc[:, ['release_year', 'screens']]
 X = pd.concat([X, fwr], axis = 1)
 X.columns = ['release_year', 'screens', 'fwr']
-Y = run_length
+Y = run_len
 
 rf_est = RandomForestRegressor(random_state = 1970)
 gb_est = GradientBoostingRegressor(random_state = 1970)
@@ -202,7 +201,8 @@ gb_est = GradientBoostingRegressor(random_state = 1970)
 ## Using MAE as evaluation metric
 rf_param_grid = {'n_estimators' : [100, 500, 2500], 
                  'max_features' : [0.33, 0.66, 1]}
-rf_mod = GridSearchCV(rf_est, param_grid = rf_param_grid, scoring = 'neg_mean_absolute_error', n_jobs = -1,
+rf_mod = GridSearchCV(rf_est, param_grid = rf_param_grid, 
+                      scoring = 'neg_mean_absolute_error', n_jobs = -1,
                       error_score = 'raise').fit(X, Y)
 
 print('The best fit Random Forest Regressor reports a cross-validated MAE of %.4f' % -rf_mod.best_score_)
@@ -210,7 +210,8 @@ print('The parameters for the best fit model are %s' % rf_mod.best_params_)
 
 gb_param_grid = {'n_estimators' : [100, 500, 2500], 'learning_rate' : [0.01, 0.001], 
                  'max_depth' : [1, 2, 4], 'max_features' : [0.33, 0.66, 1]}
-gb_mod = GridSearchCV(gb_est, param_grid = gb_param_grid, scoring = 'neg_mean_absolute_error', n_jobs = -1, 
+gb_mod = GridSearchCV(gb_est, param_grid = gb_param_grid, 
+                      scoring = 'neg_mean_absolute_error', n_jobs = -1, 
                       error_score = 'raise').fit(X, Y)
 
 print('The best fit Gradient Boosted Tree Regressor reports a cross-validated MAE of %.4f' % -gb_mod.best_score_)
@@ -222,12 +223,21 @@ print('The parameters for the best fit model are %s' % gb_mod.best_params_)
 
 X_train, X_test, Y_train, Y_test = train_test_split(X, Y, random_state = 1970)
 
-gb_est = GradientBoostingRegressor(random_state = 1970).set_params(**gb_mod.best_params_)
-gb_mod = gb_est.fit(X_train, Y_train)
-print('The R^2 for the model using test data: %.4f' % gb_mod.score(X_test, Y_test))
+gb_est_best = GradientBoostingRegressor(random_state = 1970).set_params(**gb_mod.best_params_)
+gb_mod_best = gb_est.fit(X_train, Y_train)
+print('The R^2 for the model using test data: %.4f' % gb_mod_best.score(X_test, Y_test))
 
 Y_test_hat = gb_mod.predict(X_test)
 Y_test_hat = np.round(Y_test_hat)
+for i in range(len(Y_test_hat)):
+    if Y_test_hat[i] < 1: Y_test_hat[i] = 1
+    if Y_test_hat[i] > 11: Y_test_hat[i] = 11
 
-err_mae = (Y_test_hat - Y_test)
+err_mae = np.abs(Y_test_hat - Y_test)
 
+intervals = np.arange(0, 4, 1)
+for interval in intervals:
+    cnt = len([x for x in err_mae if x <= interval])
+    cnt = 100*cnt/len(err_mae)
+    print('Percentage of estimates for test set that are off by %i week(s) or less from true value: %.2f' % (interval, cnt))
+    

@@ -15,6 +15,9 @@ import seaborn as sns
 from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor
 from sklearn.model_selection import GridSearchCV
 from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LinearRegression
+from sklearn.model_selection import cross_val_score
+import pickle
 
 #%% Loading Data
 movie_master = pd.read_pickle('./data/movie_master_en.pkl')
@@ -130,32 +133,11 @@ Y = run_len
 corr = X.corr(Y, method = 'spearman')
 print('Total Effect of Y on F : %.4f' % corr)
 
-#%% Preliminary Stats Models
-X = movie_master.loc[:, ['release_year', 'screens']]
-X = pd.concat([X, fwr], axis = 1)
-X.columns = ['release_year', 'screens', 'fwr']
-X = sm.add_constant(X)
-Y = run_len
-model = sm.OLS(Y, X).fit()
-print(model.summary())
-
-
-X = movie_master.loc[:, ['release_year', 'screens']]
-X = pd.concat([X, fwr], axis = 1)
-X.columns = ['release_year', 'screens', 'fwr']
-X.iloc[:, 1:3] = (X.iloc[:, 1:3] - X.iloc[:, 1:3].mean())/X.iloc[:, 1:3].std()
-Y = run_len
-Y = (Y - Y.mean())/Y.std()
-
-model = sm.OLS(Y, X).fit()
-print(model.summary())
-
-
 #%% Run Length Models - Investigating Likely Response Functin
 
-X = movie_master.loc[:, ['release_year', 'budget', 'screens']]
+X = movie_master.loc[:, ['release_year', 'screens']]
 X = pd.concat([X, fwr], axis = 1)
-X.columns = ['release_year', 'budget', 'screens', 'fwr']
+X.columns = ['release_year', 'screens', 'fwr']
 Y = run_len
 
 # Should not standardize when doing heteroscedacidy analysis as log transformations can lead to NANs
@@ -186,8 +168,7 @@ axs.set_xlabel('Predicted Run Length in Weeks')
 axs.set_ylabel('Residuals')
 plt.show()
 
-#--> Perhaps a non-linear response function
-
+#--> Perhaps a linear response function
 
 #%% Run Length Prediction Models - Tree Based
 X = movie_master.loc[:, ['release_year', 'screens']]
@@ -217,6 +198,13 @@ gb_mod = GridSearchCV(gb_est, param_grid = gb_param_grid,
 print('The best fit Gradient Boosted Tree Regressor reports a cross-validated MAE of %.4f' % -gb_mod.best_score_)
 print('The parameters for the best fit model are %s' % gb_mod.best_params_)
 
+# Run Length Prediction Model - Linear
+
+lr_est = LinearRegression()
+lr_mod = cross_val_score(lr_est, X, Y, scoring = 'neg_mean_absolute_error')
+
+print('The Linear Regression Model reports a cross validated MAE of %.4f' % -lr_mod.mean())
+
 ## Boosted Tree Ensemble delivers beter results (lower MAE)
 
 #%% Prediction Model Performance
@@ -240,4 +228,8 @@ for interval in intervals:
     cnt = len([x for x in err_mae if x <= interval])
     cnt = 100*cnt/len(err_mae)
     print('Percentage of estimates for test set that are off by %i week(s) or less from true value: %.2f' % (interval, cnt))
+
+#%% Saving the best fit ensemble parameters
+with open('./runlen_best_param.pkl', 'w+b') as handle:
+    pickle.dump(gb_mod.best_params_, handle)
     

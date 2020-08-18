@@ -126,22 +126,6 @@ Y = fwr
 corr = X.corr(Y, method = 'spearman')
 print('Total Effect of Y on F : %.4f' % corr)
 
-#%% First Week Models - statsmodels
-X = movie_master.loc[:, ['budget', 'screens']]
-X = sm.add_constant(X)
-Y = fwr
-model = sm.OLS(Y, X).fit()
-print(model.summary())
-
-
-X = movie_master.loc[:, ['budget', 'screens']]
-X = (X - X.mean())/X.std()
-Y = fwr
-Y = (Y - Y.mean())/Y.std()
-
-model = sm.OLS(Y, X).fit()
-print(model.summary())
-
 #%% First Week Models - Investigating Likely Response Function
 
 X = movie_master.loc[:, ['budget', 'screens']]
@@ -234,18 +218,3 @@ for interval in intervals:
     cnt = len([x for x in err_mae if x < interval])
     cnt = 100*cnt/len(err_mae)
     print('Percentage of estimates for test set that are off by less than %.0f%% from true value: %.2f' % (100*interval, cnt))
-
-#%%
-# X = movie_master.loc[:, ['budget', 'screens']]
-# Y = fwr
-
-# rf_est = RandomForestRegressor(random_state = 1970)
-# gb_est = GradientBoostingRegressor(random_state = 1970)
-
-# rf_param_grid = {'n_estimators' : [100, 500, 2500], 
-#                  'max_features' : [0.33, 0.66, 1]}
-# rf_mod = GridSearchCV(rf_est, param_grid = rf_param_grid, scoring = 'neg_mean_absolute_error', n_jobs = -1,
-#                       error_score = 'raise').fit(X, Y)
-
-# print('The best fit Random Forest Regressor reports a cross-validated MAE of %.0f' % -rf_mod.best_score_)
-# print('The parameters for the best fit model are %s' % rf_mod.best_params_)

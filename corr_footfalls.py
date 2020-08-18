@@ -15,6 +15,7 @@ import seaborn as sns
 from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor
 from sklearn.model_selection import GridSearchCV
 from sklearn.model_selection import train_test_split
+import pickle
 
 #%% Loading Data
 movie_master = pd.read_pickle('./data/movie_master_en.pkl')
@@ -154,32 +155,11 @@ Y = movie_master['india-footfalls']
 corr = X.corr(Y, method = 'spearman')
 print('Total Effect of Y on F : %.4f' % corr)
 
-#%% Preliminary Stats Models
-X = movie_master.loc[:, ['release_year', 'budget', 'screens']]
-X = pd.concat([X, fwr], axis = 1)
-X.columns = ['release_year', 'budget', 'screens', 'fwr']
-X = sm.add_constant(X)
-Y = movie_master['india-footfalls']
-model = sm.OLS(Y, X).fit()
-print(model.summary())
-
-
-X = movie_master.loc[:, ['release_year', 'budget', 'screens']]
-X = pd.concat([X, fwr], axis = 1)
-X.columns = ['release_year', 'budget', 'screens', 'fwr']
-X.iloc[:, 1:3] = (X.iloc[:, 1:3] - X.iloc[:, 1:3].mean())/X.iloc[:, 1:3].std()
-Y = movie_master['india-footfalls']
-Y = (Y - Y.mean())/Y.std()
-
-model = sm.OLS(Y, X).fit()
-print(model.summary())
-
-
 #%% Footfalls - Features of Likely Predictive Model
 
-X = movie_master.loc[:, ['release_year', 'budget', 'screens']]
-X = pd.concat([X, fwr], axis = 1)
-X.columns = ['release_year', 'budget', 'screens', 'fwr']
+X = movie_master.loc[:, ['release_year', 'budget']]
+X = pd.concat([X, fwr, run_length], axis = 1)
+X.columns = ['release_year', 'budget', 'fwr', 'run_len']
 Y = movie_master['india-footfalls']
 
 # Should not standardize when doing heteroscedacidy analysis as log transformations can lead to NANs
@@ -228,9 +208,9 @@ plt.show()
 
 
 #%% Footfalls Prediction Models - Tree Based
-X = movie_master.loc[:, ['release_year', 'budget', 'screens']]
-X = pd.concat([X, fwr], axis = 1)
-X.columns = ['release_year', 'budget', 'screens', 'fwr']
+X = movie_master.loc[:, ['release_year', 'budget']]
+X = pd.concat([X, fwr, run_length], axis = 1)
+X.columns = ['release_year', 'budget', 'fwr', 'run_len']
 Y = movie_master['india-footfalls']
 
 rf_est = RandomForestRegressor(random_state = 1970)
@@ -261,8 +241,8 @@ print('The parameters for the best fit model are %s' % gb_mod.best_params_)
 
 X_train, X_test, Y_train, Y_test = train_test_split(X, Y, random_state = 1970)
 
-gb_est = GradientBoostingRegressor(random_state = 1970).set_params(**gb_mod.best_params_)
-gb_mod = gb_est.fit(X_train, Y_train)
+gb_est_best = GradientBoostingRegressor(random_state = 1970).set_params(**gb_mod.best_params_)
+gb_mod_best = gb_est.fit(X_train, Y_train)
 print('The R^2 for the model using test data: %.4f' % gb_mod.score(X_test, Y_test))
 
 Y_test_hat = gb_mod.predict(X_test)
@@ -274,3 +254,7 @@ for interval in intervals:
     cnt = len([x for x in err_mae if x < interval])
     cnt = 100*cnt/len(err_mae)
     print('Percentage of estimates for test set that are off by less than %.0f%% from true value: %.2f' % (100*interval, cnt))
+
+#%% Saving the best fit ensemble parameters
+with open('./ff_best_param.pkl', 'w+b') as handle:
+    pickle.dump(gb_mod.best_params_, handle)

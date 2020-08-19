@@ -217,8 +217,8 @@ rf_est = RandomForestRegressor(random_state = 1970)
 gb_est = GradientBoostingRegressor(random_state = 1970)
 
 ## Using MAE as evaluation metric
-rf_param_grid = {'n_estimators' : [100, 500, 2500], 
-                 'max_features' : [0.33, 0.66, 1]}
+rf_param_grid = {'n_estimators' : [100, 500, 2500], 'criterion' : ['mse', 'mae'],
+                 'max_depth' : [1, 2, 4], 'max_features' : [0.33, 0.66, 1]}
 rf_mod = GridSearchCV(rf_est, param_grid = rf_param_grid, 
                       scoring = 'neg_mean_absolute_error', n_jobs = -1,
                       error_score = 'raise').fit(X, Y)
@@ -227,7 +227,8 @@ print('The best fit Random Forest Regressor reports a cross-validated MAE of %.4
 print('The parameters for the best fit model are %s' % rf_mod.best_params_)
 
 gb_param_grid = {'n_estimators' : [100, 500, 2500], 'learning_rate' : [0.01, 0.001], 
-                 'max_depth' : [1, 2, 4], 'max_features' : [0.33, 0.66, 1]}
+                 'criterion' : ['mse', 'mae'], 'max_depth' : [1, 2, 4], 
+                 'max_features' : [0.33, 0.66, 1]}
 gb_mod = GridSearchCV(gb_est, param_grid = gb_param_grid, 
                       scoring = 'neg_mean_absolute_error', n_jobs = -1, 
                       error_score = 'raise').fit(X, Y)
@@ -235,7 +236,7 @@ gb_mod = GridSearchCV(gb_est, param_grid = gb_param_grid,
 print('The best fit Gradient Boosted Tree Regressor reports a cross-validated MAE of %.4f' % -gb_mod.best_score_)
 print('The parameters for the best fit model are %s' % gb_mod.best_params_)
 
-## Boosted Tree Ensemble delivers beter results (lower MAE)
+## Boosted Tree Ensemble delivers best results (lower MAE)
 
 #%% Footfalls Prediction Model Performance
 

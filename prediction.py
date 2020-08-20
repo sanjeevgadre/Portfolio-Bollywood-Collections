@@ -52,7 +52,7 @@ X_train = pd.concat([X_train, fwr[train_idx]], axis = 1)
 X_train.columns = ['release_year', 'screens', 'fwr']
 Y_train = runlen[train_idx]
 
-gb_est_runlen = GradientBoostingRegressor().set_params(**runlen_best_param)
+gb_est_runlen = GradientBoostingRegressor(random_state = 1970).set_params(**runlen_best_param)
 gb_mod_runlen = gb_est_runlen.fit(X_train, Y_train)
 
 X_test = movie_master.loc[test_idx, ['release_year', 'screens']]
@@ -61,18 +61,19 @@ X_test.columns = ['release_year', 'screens', 'fwr']
 Y_test = runlen[test_idx]
 
 Y_test_hat = gb_mod_runlen.predict(X_test)
-Y_test_hat = np.round(Y_test_hat)
+Y_test_hat = np.floor(Y_test_hat)
+
 for i in range(len(Y_test_hat)):
     if Y_test_hat[i] < 1: Y_test_hat[i] = 1
     if Y_test_hat[i] > 11: Y_test_hat[i] = 11
 
-err_mae = np.abs(Y_test_hat - Y_test)
+err_mae = np.abs(Y_test - Y_test_hat)/Y_test
 
-intervals = np.arange(0, 4, 1)
+intervals = np.arange(0.25, 0.56, 0.1)
 for interval in intervals:
-    cnt = len([x for x in err_mae if x <= interval])
+    cnt = len([x for x in err_mae if x < interval])
     cnt = 100*cnt/len(err_mae)
-    print('Percentage of estimates for test set that are off by %i week(s) or less from true value: %.2f' % (interval, cnt))
+    print('Percentage of estimates for test set that are off by less than %.0f%% from true value: %.2f' % (100*interval, cnt))
     
 runlen_test_hat = pd.Series(Y_test_hat, name = 'run_len', index = test_idx)
     
@@ -84,7 +85,7 @@ X_train = pd.concat([X_train, fwr[train_idx], runlen[train_idx]], axis = 1)
 X_train.columns = ['release_year', 'budget', 'fwr', 'run_len']
 Y_train = movie_master.loc[train_idx, 'india-footfalls']
 
-gb_est_ff = GradientBoostingRegressor().set_params(**ff_best_param)
+gb_est_ff = GradientBoostingRegressor(random_state = 1970).set_params(**ff_best_param)
 gb_mod_ff = gb_est_ff.fit(X_train, Y_train)
 
 X_test = movie_master.loc[test_idx, ['release_year', 'budget']]
@@ -112,7 +113,7 @@ X_train = pd.concat([X_train, fwr[train_idx], runlen[train_idx]], axis = 1)
 X_train.columns = ['budget', 'screens', 'india-footfalls', 'fwr', 'runlen']
 Y_train = movie_master.loc[train_idx, 'india-nett-gross']
 
-gb_est_totrev = GradientBoostingRegressor().set_params(**totrev_best_param)
+gb_est_totrev = GradientBoostingRegressor(random_state = 1970).set_params(**totrev_best_param)
 gb_mod_totrev = gb_est_totrev.fit(X_train, Y_train)
 
 X_test = movie_master.loc[test_idx, ['budget', 'screens']]
@@ -140,40 +141,12 @@ X_train = pd.concat([X_train, fwr[train_idx], runlen[train_idx]], axis = 1)
 X_train.columns = ['budget', 'screens', 'india-footfalls', 'india-nett-gross', 'fwr', 'runlen']
 Y_train = exsh[train_idx]
 
-gb_est_exsh = GradientBoostingRegressor().set_params(**exsh_best_param)
+gb_est_exsh = GradientBoostingRegressor(random_state = 1970).set_params(**exsh_best_param)
 gb_mod_exsh = gb_est_exsh.fit(X_train, Y_train)
 
 X_test = movie_master.loc[test_idx, ['budget', 'screens']]
 X_test = pd.concat([X_test, ff_test_hat, totrev_test_hat, fwr[test_idx], runlen_test_hat], axis = 1)
 X_test.columns = ['budget', 'screens', 'india-footfalls', 'india-nett-gross', 'fwr', 'runlen']
-Y_test = exsh[test_idx]
-
-Y_test_hat = gb_mod_exsh.predict(X_test)
-
-err_mae = np.abs(Y_test - Y_test_hat)/Y_test
-
-intervals = np.arange(0.25, 0.56, 0.1)
-for interval in intervals:
-    cnt = len([x for x in err_mae if x < interval])
-    cnt = 100*cnt/len(err_mae)
-    print('Percentage of estimates for test set that are off by less than %.0f%% from true value: %.2f' % (100*interval, cnt))
-    
-exsh_test_hat = pd.Series(Y_test_hat, name = 'ex_share', index = test_idx)
-
-#%% Predicting Exhibitor Revenue
-print('EXHIBITOR NETT GROSS PREDICTION MODEL PERFORMANCE - II')
-
-X_train = movie_master.loc[train_idx, ['budget', 'screens', 'india-footfalls']]
-X_train = pd.concat([X_train, fwr[train_idx], runlen[train_idx]], axis = 1)
-X_train.columns = ['budget', 'screens', 'india-footfalls', 'fwr', 'runlen']
-Y_train = exsh[train_idx]
-
-gb_est_exsh = GradientBoostingRegressor().set_params(**exsh_best_param)
-gb_mod_exsh = gb_est_exsh.fit(X_train, Y_train)
-
-X_test = movie_master.loc[test_idx, ['budget', 'screens']]
-X_test = pd.concat([X_test, ff_test_hat, fwr[test_idx], runlen_test_hat], axis = 1)
-X_test.columns = ['budget', 'screens', 'india-footfalls', 'fwr', 'runlen']
 Y_test = exsh[test_idx]
 
 Y_test_hat = gb_mod_exsh.predict(X_test)

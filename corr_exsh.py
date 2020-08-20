@@ -295,9 +295,9 @@ X_train, X_test, Y_train, Y_test = train_test_split(X, Y, random_state = 1970)
 
 gb_est_best = GradientBoostingRegressor(random_state = 1970).set_params(**gb_mod.best_params_)
 gb_mod_best = gb_est.fit(X_train, Y_train)
-print('The R^2 for the model using test data: %.4f' % gb_mod.score(X_test, Y_test))
+print('The R^2 for the model using test data: %.4f' % gb_mod_best.score(X_test, Y_test))
 
-Y_test_hat = gb_mod.predict(X_test)
+Y_test_hat = gb_mod_best.predict(X_test)
 
 err_mae = np.abs(Y_test - Y_test_hat)/Y_test
 

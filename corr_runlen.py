@@ -206,29 +206,30 @@ lr_mod = cross_val_score(lr_est, X, Y, scoring = 'neg_mean_absolute_error')
 
 print('The Linear Regression Model reports a cross validated MAE of %.4f' % -lr_mod.mean())
 
-## Boosted Tree Ensemble delivers best results (lower MAE)
+## Gradient Boosted Ensemble delivers best results (lower MAE)
 
 #%% Prediction Model Performance
 
 X_train, X_test, Y_train, Y_test = train_test_split(X, Y, random_state = 1970)
 
 gb_est_best = GradientBoostingRegressor(random_state = 1970).set_params(**gb_mod.best_params_)
-gb_mod_best = gb_est.fit(X_train, Y_train)
+
+gb_mod_best = gb_est_best.fit(X_train, Y_train)
 print('The R^2 for the model using test data: %.4f' % gb_mod_best.score(X_test, Y_test))
 
-Y_test_hat = gb_mod.predict(X_test)
-Y_test_hat = np.round(Y_test_hat)
+Y_test_hat = gb_mod_best.predict(X_test)
+Y_test_hat = np.floor(Y_test_hat)
 for i in range(len(Y_test_hat)):
     if Y_test_hat[i] < 1: Y_test_hat[i] = 1
     if Y_test_hat[i] > 11: Y_test_hat[i] = 11
 
-err_mae = np.abs(Y_test_hat - Y_test)
+err_mae = np.abs(Y_test - Y_test_hat)/Y_test
 
-intervals = np.arange(0, 4, 1)
+intervals = np.arange(0.25, 0.56, 0.1)
 for interval in intervals:
-    cnt = len([x for x in err_mae if x <= interval])
+    cnt = len([x for x in err_mae if x < interval])
     cnt = 100*cnt/len(err_mae)
-    print('Percentage of estimates for test set that are off by %i week(s) or less from true value: %.2f' % (interval, cnt))
+    print('Percentage of estimates for test set that are off by less than %.0f%% from true value: %.2f' % (100*interval, cnt))
 
 #%% Saving the best fit ensemble parameters
 with open('./runlen_best_param.pkl', 'w+b') as handle:

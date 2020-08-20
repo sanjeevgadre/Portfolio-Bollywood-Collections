@@ -207,7 +207,7 @@ print('The parameters for the best fit model are %s' % gb_mod.best_params_)
 X_train, X_test, Y_train, Y_test = train_test_split(X, Y, random_state = 1970)
 
 rf_est_best = RandomForestRegressor(random_state = 1970).set_params(**rf_mod.best_params_)
-rf_mod_best = rf_est.fit(X_train, Y_train)
+rf_mod_best = rf_est_best.fit(X_train, Y_train)
 print('The R^2 for the model using test data: %.4f' % rf_mod_best.score(X_test, Y_test))
 
 Y_test_hat = rf_mod_best.predict(X_test)

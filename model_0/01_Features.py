@@ -14,8 +14,8 @@ from scipy import stats
 import statsmodels.api as sm
 
 #%% Loading Data
-movie_master = pd.read_pickle('./data/movie_master_en.pkl')
-cpi_master = pd.read_csv('./data/CPI.csv')
+movie_master = pd.read_pickle('../data/movie_master_en.pkl')
+cpi_master = pd.read_csv('../data/CPI.csv')
 
 #%% INFLATION
 # Inflation v/s Release Year
@@ -51,7 +51,7 @@ plt.axhline(y = 0.3, color = 'b', linestyle='--')
 plt.axhline(y = -0.3, color='b', linestyle='--')
 plt.title('Spearman Rank Correlation: Budget v/s Genre')
 plt.grid(axis = 'y')
-plt.savefig('./figs/feats/03_COR.jpg', dpi = 'figure')
+plt.savefig('./figs/01_Features/03_COR.jpg', dpi = 'figure')
 plt.show()
 
 # Budget v/s Release Year
@@ -85,7 +85,7 @@ plt.axhline(y = 0.3, color = 'b', linestyle='--')
 plt.axhline(y = -0.3, color='b', linestyle='--')
 plt.title('Spearman Rank Correlation: Runtime v/s Genre')
 plt.grid(axis = 'y')
-plt.savefig('./figs/feats/06_a_COR.jpg', dpi = 'figure')
+plt.savefig('./figs/01_Features/06_a_COR.jpg', dpi = 'figure')
 plt.show()
 
 ## Runtime v/s Budget, conditioned for Year
@@ -107,7 +107,7 @@ plt.axhline(y = np.mean(corr_lst), color='r', linestyle='-')
 plt.axhline(y = 0.3, color = 'b', linestyle='--')
 plt.title('Spearman Rank Correlation: Runtime v/s Budget')
 plt.grid(axis = 'y')
-plt.savefig('./figs/feats/06_b_COR.jpg', dpi = 'figure')
+plt.savefig('./figs/01_Features/06_b_COR.jpg', dpi = 'figure')
 plt.show()
 plt.close()
 
@@ -132,7 +132,7 @@ plt.axhline(y = 0.3, color = 'b', linestyle='--')
 plt.axhline(y = -0.3, color = 'b', linestyle='--')
 plt.title('Spearman Correlation: Release Week v/s Genre')
 plt.grid(axis = 'y')
-plt.savefig('./figs/feats/08_a_COR.jpg', dpi = 'figure')
+plt.savefig('./figs/01_Features/08_a_COR.jpg', dpi = 'figure')
 plt.show()
 plt.close()
 
@@ -154,7 +154,7 @@ plt.ylabel('p-values')
 plt.xlabel('Release Week')
 plt.xticks(np.arange(1, 54, 3))
 plt.title('p-value for Coefficeint of Release Week v/s Runtime')
-plt.savefig('./figs/feats/08_b_COR.jpg')
+plt.savefig('./figs/01_Features/08_b_COR.jpg')
 plt.show()
 plt.close()
 
@@ -208,7 +208,7 @@ plt.axhline(y = 0.3, color = 'b', linestyle='--')
 plt.axhline(y = -0.3, color = 'b', linestyle='--')
 plt.title('Spearman Correlation: Screens v/s Genre')
 plt.grid(axis = 'y')
-plt.savefig('./figs/feats/11_a_COR.jpg', dpi = 'figure')
+plt.savefig('./figs/01_Features/11_a_COR.jpg', dpi = 'figure')
 plt.show()
 plt.close()
 
@@ -234,7 +234,7 @@ plt.ylabel('p values')
 plt.axhline(y = 0.05, color = 'r', linestyle='--')
 plt.title('p-values for Regression Coefficient: Screens v/s Runtime')
 plt.grid(axis = 'y')
-plt.savefig('./figs/feats/11_b_COR.jpg', dpi = 'figure')
+plt.savefig('./figs/01_Features/11_b_COR.jpg', dpi = 'figure')
 plt.show()
 plt.close()
 
@@ -259,7 +259,7 @@ plt.axhline(y = 0.3, color = 'b', linestyle='--')
 plt.axhline(y = -0.3, color = 'b', linestyle='--')
 plt.title('Spearman Correlation: Screens v/s Budget')
 plt.grid(axis = 'y')
-plt.savefig('./figs/feats/11_c_COR.jpg', dpi = 'figure')
+plt.savefig('./figs/01_Features/11_c_COR.jpg', dpi = 'figure')
 plt.show()
 plt.close()
 

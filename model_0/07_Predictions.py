@@ -13,9 +13,9 @@ from sklearn.model_selection import train_test_split
 import pickle
 
 #%% Get Data and Model Params
-movie_master = pd.read_pickle('./data/movie_master_en.pkl')
-cpi_master = pd.read_csv('./data/CPI.csv')
-weekly_master = pd.read_hdf('./data/weekly_master.h5')
+movie_master = pd.read_pickle('../data/movie_master_en.pkl')
+cpi_master = pd.read_csv('../data/CPI.csv')
+weekly_master = pd.read_hdf('../data/weekly_master.h5')
 
 
 # Adjusting the first week revenue to account for entertainment and service tax

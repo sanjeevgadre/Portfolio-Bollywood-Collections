@@ -18,9 +18,9 @@ from sklearn.model_selection import train_test_split
 import pickle
 
 #%% Loading Data
-movie_master = pd.read_pickle('./data/movie_master_en.pkl')
-cpi_master = pd.read_csv('./data/CPI.csv')
-weekly_master = pd.read_hdf('./data/weekly_master.h5')
+movie_master = pd.read_pickle('../data/movie_master_en.pkl')
+cpi_master = pd.read_csv('../data/CPI.csv')
+weekly_master = pd.read_hdf('../data/weekly_master.h5')
 
 # Adjusting the first week revenue to account for entertainment and service tax
 fwr = movie_master['india-first-week'] * (movie_master['india-nett-gross']/movie_master['india-total-gross'])
@@ -30,20 +30,17 @@ df = weekly_master.groupby('movie_id').sum().iloc[:, 3:]
 run_length = df.apply(lambda x: np.count_nonzero(x), axis = 1)
 run_length.reset_index(drop = True, inplace = True)
 
-# Calculating Exhibitor Share (Total Nett Gross - Distributor Share)
-ex_share = movie_master['india-nett-gross'] - movie_master['india-distributor-share']
-
-#%% Exhibitor Share v/s Release Week
-corr = movie_master['release_week'].corr(ex_share, method = 'spearman')
+#%% Footfalls v/s Release Week
+corr = movie_master['release_week'].corr(movie_master['india-footfalls'], method = 'spearman')
 print('%.4f' % corr)
 
-#%% Exhibitor Share v/s Genre conditioned on Year
+#%% Footfalls v/s Genre conditioned on Year
 corr_lst = []
 years = movie_master['release_year'].unique()
 for year in years:
     X = movie_master.loc[movie_master['release_year'] == year]['genre']
     indx = movie_master.loc[movie_master['release_year'] == year].index
-    Y = ex_share[indx]
+    Y = movie_master['india-footfalls'][indx]
     corr = Y.corr(X, method = 'spearman')
     corr_lst.append(corr)
 
@@ -56,38 +53,13 @@ plt.xlabel('Year of Release')
 plt.axhline(y = np.mean(corr_lst), color='r', linestyle='-')
 plt.axhline(y = 0.3, color = 'b', linestyle='--')
 plt.axhline(y = -0.3, color = 'b', linestyle='--')
-plt.title('Spearman Correlation: Exhibitor Share v/s Genre')
+plt.title('Spearman Correlation: Footfalls v/s Genre')
 plt.grid(axis = 'y')
-plt.savefig('./figs/es/02_COR.jpg', dpi = 'figure')
+plt.savefig('./figs/04_Footfalls/02_COR.jpg', dpi = 'figure')
 plt.show()
 plt.close()
 
-#%% Exhibitor Share v/s Footfalls, conditioned on Year, Budget, First Week Revenue and Run Length
-pvalue_lst = []
-years = movie_master['release_year'].unique()
-for year in years:
-    X = movie_master.loc[movie_master['release_year'] == year, ['budget', 'india-footfalls']]
-    indx = movie_master.loc[movie_master['release_year'] == year].index
-    X = pd.concat([X, fwr[indx], run_length[indx], ], axis = 1)
-    X.columns = ['budget', 'footfalls', 'fwr', 'run_len']
-    Y = ex_share[indx]
-    X = (X - X.mean())/X.std()
-    Y = (Y - Y.mean())/Y.std()
-    model = sm.OLS(Y, X).fit()
-    pvalue_lst.append(model.pvalues['footfalls'])
-
-plt.figure()
-plt.scatter(years, pvalue_lst)
-plt.xlabel('Year of Release')
-plt.axhline(y = 0.05, color='r', linestyle='--')
-plt.title('p-values for Regression Coefficient: Exhibitor Share v/s Footfalls')
-plt.grid(axis = 'y')
-plt.savefig('./figs/es/03_COR.jpg', dpi = 'figure')
-plt.show()
-plt.close()
-
-
-#%% Exhibitor Share v/s Run Length conditioned on Year, Screens and First Week Revenue
+#%% Footfalls v/s Run Length conditioned on Year, Screens and First Week Revenue
 pvalue_lst = []
 years = movie_master['release_year'].unique()
 for year in years:
@@ -95,7 +67,7 @@ for year in years:
     indx = movie_master.loc[movie_master['release_year'] == year].index
     X = pd.concat([X, fwr[indx], run_length[indx]], axis = 1)
     X.columns = ['screens', 'fwr', 'run_len']
-    Y = ex_share[indx]
+    Y = movie_master['india-footfalls'][indx]
     X = (X - X.mean())/X.std()
     Y = (Y - Y.mean())/Y.std()
     model = sm.OLS(Y, X).fit()
@@ -105,39 +77,39 @@ plt.figure()
 plt.scatter(years, pvalue_lst)
 plt.xlabel('Year of Release')
 plt.axhline(y = 0.05, color='r', linestyle='--')
-plt.title('p-values for Regression Coefficient: Exhibitor Share v/s Run Length')
+plt.title('p-values for Regression Coefficient: Footfalls v/s Run Length')
 plt.grid(axis = 'y')
-plt.savefig('./figs/es/04_COR.jpg', dpi = 'figure')
+plt.savefig('./figs/04_Footfalls/03_COR.jpg', dpi = 'figure')
 plt.show()
 plt.close()
 
-#%% Exhibitor Share v/s First Week Revenue conditioned on Budget and Screens
+#%% Footfalls v/s First Week Revenue conditioned on Budget and Screens
 X = movie_master.loc[:, ['budget', 'screens']]
 X = pd.concat([X, fwr], axis = 1)
 X.columns = ['budget', 'screens', 'fwr']
-Y = ex_share
+Y = movie_master['india-footfalls']
 X = (X - X.mean())/X.std()
 Y = (Y - Y.mean())/Y.std()
 
 model = sm.OLS(Y, X).fit()
 print(model.summary())
 
-#%% Exhibitor Share v/s Screens conditioned on Budget
+#%% Footfalls v/s Screens conditioned on Budget
 X = movie_master.loc[:, ['budget', 'screens']]
-Y = ex_share
+Y = movie_master['india-footfalls']
 X = (X - X.mean())/X.std()
 Y = (Y - Y.mean())/Y.std()
 
 model = sm.OLS(Y, X).fit()
 print(model.summary())
 
-#%% Exhibitor Share v/s Runtime conditioned on Budget and Year
+#%% Footfalls v/s Runtime conditioned on Budget and Year
 pvalue_lst = []
 years = movie_master['release_year'].unique()
 for year in years:
     X = movie_master.loc[movie_master['release_year'] == year, ['budget', 'runtime']]
     indx = movie_master.loc[movie_master['release_year'] == year].index
-    Y = ex_share[indx]
+    Y = movie_master['india-footfalls'][indx]
     X = (X - X.mean())/X.std()
     Y = (Y - Y.mean())/Y.std()
     model = sm.OLS(Y, X).fit()
@@ -147,19 +119,19 @@ plt.figure()
 plt.scatter(years, pvalue_lst)
 plt.xlabel('Year of Release')
 plt.axhline(y = 0.05, color='r', linestyle='--')
-plt.title('p-values for Regression Coefficient: Exhibitor Share v/s Runtime')
+plt.title('p-values for Regression Coefficient: Footfalls v/s Runtime')
 plt.grid(axis = 'y')
-plt.savefig('./figs/es/07_COR.jpg', dpi = 'figure')
+plt.savefig('./figs/04_Footfalls/06_COR.jpg', dpi = 'figure')
 plt.show()
 plt.close()
 
-#%% Exhibitor Share v/s Budget, conditioned on Year
+#%% Footfalls v/s Budget, conditioned on Year
 years = movie_master['release_year'].unique()
 corr_lst = []
 for year in years:
     X = movie_master.loc[movie_master['release_year'] == year, 'budget']
     indx = movie_master.loc[movie_master['release_year'] == year].index
-    Y = ex_share[indx]
+    Y = movie_master['india-footfalls'][indx]
     corr = X.corr(Y, method = 'spearman')
     corr_lst.append(corr)
     
@@ -171,47 +143,24 @@ plt.ylim(0, 1)
 plt.xlabel('Year of Release')
 plt.axhline(y = np.mean(corr_lst), color='r', linestyle='-')
 plt.axhline(y = 0.3, color = 'b', linestyle='--')
-plt.title('Spearman Correlation: Exhibitor Share v/s Budget')
+plt.title('Spearman Correlation: Footfalls v/s Budget')
 plt.grid(axis = 'y')
-plt.savefig('./figs/es/08_COR.jpg', dpi = 'figure')
+plt.savefig('./figs/04_Footfalls/07_COR.jpg', dpi = 'figure')
 plt.show()
 plt.close()
 
-#%% Exhibitor Share v/s Year, conditioned on Inflation
+#%% Footfalls v/s Year
 X = movie_master['release_year']
-Y = ex_share * movie_master['inf_adj_fct']
-corr = X.corr(Y, method = 'spearman')
-print('Total Effect of Y on E, adjusted for inflation, : %.4f' % corr)
-
-X = movie_master['budget']
-Y = ex_share
-corr = X.corr(Y, method = 'spearman')
-print('Total Effect of B on E : %.4f' % corr)
-
-## First Week Revenue v/s Year
-X = movie_master['release_year']
-Y = ex_share
+Y = movie_master['india-footfalls']
 corr = X.corr(Y, method = 'spearman')
 print('Total Effect of Y on F : %.4f' % corr)
 
-#%% Exhibitor Share v/s Total Nett Revenue, conditioned on Footfalls, Run Length, First Week Revenue, Release Screens and Budget
-X = movie_master.loc[:, ['budget', 'screens', 'india-nett-gross', 'india-footfalls']]
+#%% Footfalls - Features of Likely Predictive Model
+
+X = movie_master.loc[:, ['release_year', 'budget']]
 X = pd.concat([X, fwr, run_length], axis = 1)
-X.columns = ['budget', 'screens', 'india-nett-gross', 'india-footfalls', 'fwr', 'run_len']
-Y = ex_share
-
-X = (X - X.mean())/X.std()
-Y = (Y - Y.mean())/Y.std()
-
-model = sm.OLS(Y, X).fit()
-print(model.summary())
-
-#%% Exhibitor Share - Features of Likely Predictive Model
-X = movie_master.loc[:, ['budget', 'india-footfalls', 'screens', 'india-nett-gross']]
-X = pd.concat([X, fwr, run_length], axis = 1)
-X.columns = ['budget', 'india-footfalls', 'screens', 'india-nett-gross', 'fwr', 'runlen']
-Y = ex_share
-Y[1094] = 1             # hack
+X.columns = ['release_year', 'budget', 'fwr', 'run_len']
+Y = movie_master['india-footfalls']
 
 # Should not standardize when doing heteroscedacidy analysis as log transformations can lead to NANs
 
@@ -226,7 +175,7 @@ Y_hat = Y_hat/1000000
 plt.scatter(Y_hat, studentized_residuals)
 plt.grid(True, which = 'major', axis = 'y')
 plt.ylabel('Studentized Residuals')
-plt.xlabel('Predicted Exhibitor Share')
+plt.xlabel('Predicted Footfalls')
 plt.show()
 
 #--> Clearly there is heteroscedacity. To eliminate heteroscedacity, we try fitting a model using the log values of Y
@@ -239,7 +188,7 @@ plt.figure()
 plt.scatter(Y_hat, studentized_residuals)
 plt.grid(True, which = 'major', axis = 'y')
 plt.ylabel('Studentized Residuals')
-plt.xlabel('Predicted Log Value of Exhibitor Share')
+plt.xlabel('Predicted Log Value of Footfalls')
 plt.show()
 
 #--> Does eliminate heteroscedacity. Should use log values of Y for further investigation and modelling
@@ -251,18 +200,18 @@ residuals = Y_hat - Y
 plt.figure(figsize = (15, 5))
 sns.set(style="whitegrid")
 axs = sns.residplot(Y_hat, residuals, lowess = True)
-axs.set_xlabel('Predicted Log Values of Exhibitor Share')
+axs.set_xlabel('Predicted Log Values of Footfalls')
 axs.set_ylabel('Residuals')
 plt.show()
 
-#--> Likely non-linear response function
+#--> Perhaps a non-linear response function
 
 
-#%% Exhibitor Share Prediction Models - Tree Based
-X = movie_master.loc[:, ['budget', 'india-footfalls', 'screens', 'india-nett-gross']]
+#%% Footfalls Prediction Models - Tree Based
+X = movie_master.loc[:, ['release_year', 'budget']]
 X = pd.concat([X, fwr, run_length], axis = 1)
-X.columns = ['budget', 'india-footfalls', 'screens', 'india-nett-gross', 'fwr', 'runlen']
-Y = ex_share
+X.columns = ['release_year', 'budget', 'fwr', 'run_len']
+Y = movie_master['india-footfalls']
 
 rf_est = RandomForestRegressor(random_state = 1970)
 gb_est = GradientBoostingRegressor(random_state = 1970)
@@ -274,7 +223,7 @@ rf_mod = GridSearchCV(rf_est, param_grid = rf_param_grid,
                       scoring = 'neg_mean_absolute_error', n_jobs = -1,
                       error_score = 'raise').fit(X, Y)
 
-print('The best fit Random Forest Regressor reports a cross-validated MAE of %.0f' % -rf_mod.best_score_)
+print('The best fit Random Forest Regressor reports a cross-validated MAE of %.4f' % -rf_mod.best_score_)
 print('The parameters for the best fit model are %s' % rf_mod.best_params_)
 
 gb_param_grid = {'n_estimators' : [100, 500, 2500], 'learning_rate' : [0.01, 0.001], 
@@ -284,17 +233,18 @@ gb_mod = GridSearchCV(gb_est, param_grid = gb_param_grid,
                       scoring = 'neg_mean_absolute_error', n_jobs = -1, 
                       error_score = 'raise').fit(X, Y)
 
-print('The best fit Gradient Boosted Tree Regressor reports a cross-validated MAE of %.0f' % -gb_mod.best_score_)
+print('The best fit Gradient Boosted Tree Regressor reports a cross-validated MAE of %.4f' % -gb_mod.best_score_)
 print('The parameters for the best fit model are %s' % gb_mod.best_params_)
 
-## Boosted Tree Ensemble delivers beter results (lower MAE)
+## Boosted Tree Ensemble delivers best results (lower MAE)
 
-#%% Exhibitor Share Prediction Model Performance
+#%% Footfalls Prediction Model Performance
 
 X_train, X_test, Y_train, Y_test = train_test_split(X, Y, random_state = 1970)
 
 gb_est_best = GradientBoostingRegressor(random_state = 1970).set_params(**gb_mod.best_params_)
-gb_mod_best = gb_est.fit(X_train, Y_train)
+
+gb_mod_best = gb_est_best.fit(X_train, Y_train)
 print('The R^2 for the model using test data: %.4f' % gb_mod_best.score(X_test, Y_test))
 
 Y_test_hat = gb_mod_best.predict(X_test)
@@ -308,5 +258,6 @@ for interval in intervals:
     print('Percentage of estimates for test set that are off by less than %.0f%% from true value: %.2f' % (100*interval, cnt))
 
 #%% Saving the best fit ensemble parameters
-with open('./exsh_best_param.pkl', 'w+b') as handle:
+with open('./ff_best_param.pkl', 'w+b') as handle:
     pickle.dump(gb_mod.best_params_, handle)
+    

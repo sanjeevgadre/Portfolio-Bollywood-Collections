@@ -18,9 +18,9 @@ from sklearn.model_selection import train_test_split
 import pickle
 
 #%% Loading Data
-movie_master = pd.read_pickle('./data/movie_master_en.pkl')
-cpi_master = pd.read_csv('./data/CPI.csv')
-weekly_master = pd.read_hdf('./data/weekly_master.h5')
+movie_master = pd.read_pickle('../data/movie_master_en.pkl')
+cpi_master = pd.read_csv('../data/CPI.csv')
+weekly_master = pd.read_hdf('../data/weekly_master.h5')
 
 # Adjusting the first week revenue to account for entertainment and service tax
 fwr = movie_master['india-first-week'] * (movie_master['india-nett-gross']/movie_master['india-total-gross'])
@@ -33,9 +33,16 @@ run_length.reset_index(drop = True, inplace = True)
 # Calculating Exhibitor Share (Total Nett Gross - Distributor Share)
 ex_share = movie_master['india-nett-gross'] - movie_master['india-distributor-share']
 
-#%% Exhibitor Share v/s Release Week
-corr = movie_master['release_week'].corr(ex_share, method = 'spearman')
-print('%.4f' % corr)
+#%% Exhibitor Share v/s Release Week conditioned on Budget
+X = movie_master.loc[:, ['release_week', 'budget']]
+X['release_week'] = X['release_week'].astype('float')
+Y = ex_share
+
+X = (X - X.mean())/X.std()
+Y = (Y - Y.mean())/Y.std()
+
+model = sm.OLS(Y, X).fit()
+print(model.summary())
 
 #%% Exhibitor Share v/s Genre conditioned on Year
 corr_lst = []

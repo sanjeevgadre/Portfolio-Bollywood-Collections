@@ -11,8 +11,8 @@ import pandas as pd
 from datetime import datetime
 
 #%% Enriching the movie_master
-movie_master = pd.read_hdf('./data/movie_master.h5', key = 'df')
-cpi_master = pd.read_csv('./data/CPI.csv')
+movie_master = pd.read_hdf('../data/movie_master.h5', key = 'df')
+cpi_master = pd.read_csv('../data/CPI.csv')
 
 # Re-index movie_master to get unique index values
 movie_master.reset_index(drop = True, inplace = True)
@@ -79,4 +79,4 @@ for c in range(len(cols)):
     movie_master[new_cols[c]] = movie_master.apply(lambda x: x[cols[c]]*x['inf_adj_fct'], axis = 1)
         
 # Save the enriched movie_master file
-movie_master.to_pickle('./data/movie_master_en.pkl')
+movie_master.to_pickle('../data/movie_master_en.pkl')

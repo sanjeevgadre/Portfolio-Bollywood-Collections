@@ -11,9 +11,10 @@ import pandas as pd
 from scipy import stats
 import statsmodels.api as sm
 
+
 #%% Loading Data
-movie_master = pd.read_pickle('./data/movie_master_en.pkl')
-cpi_master = pd.read_csv('./data/CPI.csv')
+movie_master = pd.read_pickle('../data/movie_master_en.pkl')
+cpi_master = pd.read_csv('../data/CPI.csv')
 
 #%% INFLATION
 # Inflation v/s Release Year
@@ -162,36 +163,6 @@ Y = (Y - Y.mean())/Y.std()
 model = sm.OLS(Y, X).fit()
 print(model.summary())
 
-#%%% HOLDOUT
-## Release Week v/s Budget
-    ## I as Instrumental Variable
-    
-X = movie_master['inf_adj_fct']
-Y = movie_master['release_week']
-Y = Y.astype('float')
-
-X = (X - X.mean())/X.std()
-Y = (Y - Y.mean())/Y.std()
-
-model_ab = sm.OLS(Y, X).fit()
-print(model_ab.summary())
-
-X = movie_master['inf_adj_fct']
-Y = movie_master['budget']
-
-X = (X - X.mean())/X.std()
-Y = (Y - Y.mean())/Y.std()
-
-model_a = sm.OLS(Y, X).fit()
-print(model_a.summary())
-
-
-corr_ab = movie_master['inf_adj_fct'].corr(movie_master['release_week'], method = 'spearman')
-print('The Spearman Correlation Coeff between I and W: %.4f' % corr_ab)
-corr_a = .2922
-corr_b = corr_ab/corr_a
-print('The Spearman Correlation Coeff for direct effect of B on W: %.4f' % corr_b)
-
-## Release Week v/s Release Year
+#%% Release Week v/s Release Year
 corr = movie_master['release_year'].corr(movie_master['release_week'], method = 'spearman')
 print('%.4f' % corr)

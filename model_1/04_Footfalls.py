@@ -18,9 +18,9 @@ from sklearn.model_selection import train_test_split
 import pickle
 
 #%% Loading Data
-movie_master = pd.read_pickle('./data/movie_master_en.pkl')
-cpi_master = pd.read_csv('./data/CPI.csv')
-weekly_master = pd.read_hdf('./data/weekly_master.h5')
+movie_master = pd.read_pickle('../data/movie_master_en.pkl')
+cpi_master = pd.read_csv('../data/CPI.csv')
+weekly_master = pd.read_hdf('../data/weekly_master.h5')
 
 # Adjusting the first week revenue to account for entertainment and service tax
 fwr = movie_master['india-first-week'] * (movie_master['india-nett-gross']/movie_master['india-total-gross'])
@@ -242,6 +242,6 @@ for interval in intervals:
     print('Percentage of estimates for test set that are off by less than %.0f%% from true value: %.2f' % (100*interval, cnt))
 
 #%% Saving the best fit ensemble parameters
-with open('./ff_best_param1.pkl', 'w+b') as handle:
+with open('./ff_best_param.pkl', 'w+b') as handle:
     pickle.dump(gb_mod.best_params_, handle)
     

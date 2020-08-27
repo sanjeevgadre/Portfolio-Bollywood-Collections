@@ -18,8 +18,8 @@ from sklearn.model_selection import train_test_split
 
 
 #%% Loading Data
-movie_master = pd.read_pickle('./data/movie_master_en.pkl')
-cpi_master = pd.read_csv('./data/CPI.csv')
+movie_master = pd.read_pickle('../data/movie_master_en.pkl')
+cpi_master = pd.read_csv('../data/CPI.csv')
 
 # Adjusting the first week revenue to account for entertainment and service tax
 fwr = movie_master['india-first-week'] * (movie_master['india-nett-gross']/movie_master['india-total-gross'])
@@ -97,8 +97,8 @@ model = sm.OLS(Y, X).fit()
 print(model.summary())
 
 #%% First Week Models - Investigating Likely Response Function
-
-X = movie_master.loc[:, ['release_year', 'inf_adj_fct''budget', 'screens']]
+X = movie_master.loc[:, ['release_year', 'inf_adj_fct', 'budget', 'screens']]
+X = X.astype('float')
 Y = fwr
 
 # Should not standardize when doing heteroscedacidy analysis as log transformations can lead to NANs
@@ -182,52 +182,6 @@ rf_mod_best = rf_est_best.fit(X_train, Y_train)
 print('The R^2 for the model using test data: %.4f' % rf_mod_best.score(X_test, Y_test))
 
 Y_test_hat = rf_mod_best.predict(X_test)
-err_mae = np.abs(Y_test - Y_test_hat)/Y_test
-
-intervals = np.arange(0.25, 0.56, 0.1)
-for interval in intervals:
-    cnt = len([x for x in err_mae if x < interval])
-    cnt = 100*cnt/len(err_mae)
-    print('Percentage of estimates for test set that are off by less than %.0f%% from true value: %.2f' % (100*interval, cnt))
-
-#%% First Week Revenue Prediction Models - Tree Based
-
-X = movie_master.loc[:, ['screens']]
-Y = fwr
-
-rf_est = RandomForestRegressor(random_state = 1970)
-gb_est = GradientBoostingRegressor(random_state = 1970)
-
-rf_param_grid = {'n_estimators' : [100, 500, 2500], 'criterion' : ['mse', 'mae'],
-                 'max_depth' : [1, 2, 4], 'max_features' : [0.33, 0.66, 1]}
-rf_mod = GridSearchCV(rf_est, param_grid = rf_param_grid, 
-                      scoring = 'neg_mean_absolute_error', n_jobs = -1,
-                      error_score = 'raise').fit(X, Y)
-
-print('The best fit Random Forest Regressor reports a cross-validated MAE of %.0f' % -rf_mod.best_score_)
-print('The parameters for the best fit model are %s' % rf_mod.best_params_)
-
-gb_param_grid = {'n_estimators' : [100, 500, 2500], 'learning_rate' : [0.01, 0.001], 
-                 'criterion' : ['mse', 'mae'], 'max_depth' : [1, 2, 4], 
-                 'max_features' : [0.33, 0.66, 1]}
-gb_mod = GridSearchCV(gb_est, param_grid = gb_param_grid, 
-                      scoring = 'neg_mean_absolute_error', n_jobs = -1, 
-                      error_score = 'raise').fit(X, Y)
-
-print('The best fit Gradient Boosted Tree Regressor reports a cross-validated MAE of %.0f' % -gb_mod.best_score_)
-print('The parameters for the best fit model are %s' % gb_mod.best_params_)
-
-## The Gradient Boosted Ensemble provides a better model (lower MAE)
-
-#%% First Week Revenue Prediction Model Performance
-
-X_train, X_test, Y_train, Y_test = train_test_split(X, Y, random_state = 1970)
-
-gb_est_best = GradientBoostingRegressor(random_state = 1970).set_params(**gb_mod.best_params_)
-gb_mod_best = gb_est_best.fit(X_train, Y_train)
-print('The R^2 for the model using test data: %.4f' % gb_mod_best.score(X_test, Y_test))
-
-Y_test_hat = gb_mod_best.predict(X_test)
 err_mae = np.abs(Y_test - Y_test_hat)/Y_test
 
 intervals = np.arange(0.25, 0.56, 0.1)

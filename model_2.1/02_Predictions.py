@@ -13,9 +13,9 @@ from sklearn.model_selection import train_test_split
 import pickle
 
 #%% Get Data and Model Params
-movie_master = pd.read_pickle('./data/movie_master_en.pkl')
-cpi_master = pd.read_csv('./data/CPI.csv')
-weekly_master = pd.read_hdf('./data/weekly_master.h5')
+movie_master = pd.read_pickle('../data/movie_master_en.pkl')
+cpi_master = pd.read_csv('../data/CPI.csv')
+weekly_master = pd.read_hdf('../data/weekly_master.h5')
 
 
 # Adjusting the first week revenue to account for entertainment and service tax
@@ -31,12 +31,14 @@ exsh = movie_master['india-nett-gross'] - movie_master['india-distributor-share'
 exsh[1094] = 1             # hack
 
 # Params for best fits
-with open('./runlen_best_param1.pkl', 'r+b') as handle:
+with open('../model_1/runlen_best_param.pkl', 'r+b') as handle:
     runlen_best_param = pickle.loads(handle.read())
-with open('./totrev_best_param2.pkl', 'r+b') as handle:
+
+with open('./totrev_best_param.pkl', 'r+b') as handle:
     totrev_best_param = pickle.loads(handle.read())
-with open('./exsh_best_param.pkl', 'r+b') as handle:
-    exsh_best_param = pickle.loads(handle.read())
+
+# with open('./exsh_best_param.pkl', 'r+b') as handle:
+#     exsh_best_param = pickle.loads(handle.read())
 
 # Set up Train and Test indices
 train_idx, test_idx = train_test_split(movie_master.index, random_state = 1970)
@@ -75,34 +77,6 @@ for interval in intervals:
     
 runlen_test_hat = pd.Series(Y_test_hat, name = 'run_len', index = test_idx)
     
-# #%% Predicting Footfalls
-# print('FOOTFALLS PREDICTION MODEL PERFORMANCE')
-
-# X_train = movie_master.loc[train_idx, ['release_year', 'budget']]
-# X_train = pd.concat([X_train, fwr[train_idx], runlen[train_idx]], axis = 1)
-# X_train.columns = ['release_year', 'budget', 'fwr', 'run_len']
-# Y_train = movie_master.loc[train_idx, 'india-footfalls']
-
-# gb_est_ff = GradientBoostingRegressor(random_state = 1970).set_params(**ff_best_param)
-# gb_mod_ff = gb_est_ff.fit(X_train, Y_train)
-
-# X_test = movie_master.loc[test_idx, ['release_year', 'budget']]
-# X_test = pd.concat([X_test, fwr[test_idx], runlen_test_hat], axis = 1)
-# X_test.columns = ['release_year', 'budget', 'fwr', 'run_len']
-# Y_test = movie_master.loc[test_idx, 'india-footfalls']
-
-# Y_test_hat = gb_mod_ff.predict(X_test)
-
-# err_mae = np.abs(Y_test - Y_test_hat)/Y_test
-
-# intervals = np.arange(0.25, 0.56, 0.1)
-# for interval in intervals:
-#     cnt = len([x for x in err_mae if x < interval])
-#     cnt = 100*cnt/len(err_mae)
-#     print('Percentage of estimates for test set that are off by less than %.0f%% from true value: %.2f' % (100*interval, cnt))
-    
-# ff_test_hat = pd.Series(Y_test_hat, name = 'footfalls', index = test_idx)
-
 #%% Predicting Total Revenue
 print('TOTAL NETT GROSS PREDICTION MODEL PERFORMANCE')
 

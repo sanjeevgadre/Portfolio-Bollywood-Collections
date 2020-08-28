@@ -5,7 +5,7 @@ Created on Fri Jul 17 17:22:06 2020
 
 @author: sanjeev
 
-THIS IS MODEL 1
+THIS IS MODEL 2
 """
 
 #%% Libraries
@@ -43,8 +43,8 @@ Y = (Y - Y.mean())/Y.std()
 model = sm.OLS(Y, X).fit()
 print(model.summary())
 
-#%% Total Nett Revenue v/s Genre conditioned on Year and Footfalls
-X = movie_master.loc[:, ['release_year', 'india-footfalls', 'genre']]
+#%% Total Nett Revenue v/s Genre conditioned on Year
+X = movie_master.loc[:, ['release_year', 'genre']]
 X['release_year'] = X['release_year'].astype('float')
 X = pd.get_dummies(X)
 Y = movie_master['india-nett-gross']
@@ -55,11 +55,10 @@ Y = (Y - Y.mean())/Y.std()
 model = sm.OLS(Y, X).fit()
 print(model.summary())
 
-#%% Total Nett Revenue v/s Footfalls, conditioned on Year, Genre, Screens, Runtime, First Week Revenue and Run Length
-X = movie_master.loc[:, ['release_year', 'genre', 'screens', 'runtime', 'india-footfalls']]
+#%% Total Nett Revenue v/s Run Length conditioned on Year, Budget, Screens, Runtime and First Week Revenue
+X = movie_master.loc[:, ['release_year', 'budget', 'screens', 'runtime']]
 X = pd.concat([X, fwr, run_length], axis = 1)
-X.columns = ['release_year', 'genre', 'screens', 'runtime', 
-             'india-footfalls', 'fwr', 'runlen']
+X.columns = ['release_year', 'budget', 'screens', 'runtime', 'fwr', 'runlen']
 X['release_year'] = X['release_year'].astype('float')
 X = pd.get_dummies(X)
 Y = movie_master['india-nett-gross']
@@ -70,64 +69,49 @@ Y = (Y - Y.mean())/Y.std()
 model = sm.OLS(Y, X).fit()
 print(model.summary())
 
-#%% Total Nett Revenue v/s Run Length conditioned on Year, Budget, Screens, Runtime, First Week Revenue and Footfalls
-X = movie_master.loc[:, ['release_year', 'budget', 'screens', 'runtime', 'india-footfalls']]
-X = pd.concat([X, fwr, run_length], axis = 1)
-X.columns = ['release_year', 'budget', 'screens', 'runtime', 
-             'india-footfalls', 'fwr', 'runlen']
-X['release_year'] = X['release_year'].astype('float')
-X = pd.get_dummies(X)
-Y = movie_master['india-nett-gross']
-
-X = (X - X.mean())/X.std()
-Y = (Y - Y.mean())/Y.std()
-
-model = sm.OLS(Y, X).fit()
-print(model.summary())
-
-#%% Total Nett Revenue v/s First Week Revenue conditioned on Year, Inflation, Budget, Screens and Footfalls
-X = movie_master.loc[:, ['release_year', 'inf_adj_fct', 'budget', 'screens', 
-                         'india-footfalls']]
-X = pd.concat([X, fwr], axis = 1)
-X.columns = ['release_year', 'inflation', 'budget', 'screens', 
-                         'india-footfalls', 'fwr']
-X['release_year'] = X['release_year'].astype('float')
-Y = movie_master['india-nett-gross']
-
-X = (X - X.mean())/X.std()
-Y = (Y - Y.mean())/Y.std()
-
-model = sm.OLS(Y, X).fit()
-print(model.summary())
-
-#%% Total Nett Revenue v/s Screens conditioned on Year, Budget, Screens, Footfalls and First Week Revenue
-X = movie_master.loc[:, ['release_year', 'budget', 'screens', 'india-footfalls']]
-X = pd.concat([X, fwr], axis = 1)
-X.columns = ['release_year', 'budget', 'screens', 'india-footfalls', 'fwr']
-X['release_year'] = X['release_year'].astype('float')
-Y = movie_master['india-nett-gross']
-
-X = (X - X.mean())/X.std()
-Y = (Y - Y.mean())/Y.std()
-
-model = sm.OLS(Y, X).fit()
-print(model.summary())
-
-#%% Total Nett Revenue v/s Runtime conditioned on Year, Budget and Footfalls
-X = movie_master.loc[:, ['release_year', 'budget', 'india-footfalls', 'runtime']]
-X['release_year'] = X['release_year'].astype('float')
-Y = movie_master['india-nett-gross']
-
-X = (X - X.mean())/X.std()
-Y = (Y - Y.mean())/Y.std()
-
-model = sm.OLS(Y, X).fit()
-print(model.summary())
-
-#%% Total Nett Revenue v/s Budget, conditioned on Year, Inflation, Screens and First Week Revenue
+#%% Total Nett Revenue v/s First Week Revenue conditioned on Year, Inflation, Budget, Screens
 X = movie_master.loc[:, ['release_year', 'inf_adj_fct', 'budget', 'screens']]
 X = pd.concat([X, fwr], axis = 1)
 X.columns = ['release_year', 'inflation', 'budget', 'screens', 'fwr']
+X['release_year'] = X['release_year'].astype('float')
+Y = movie_master['india-nett-gross']
+
+X = (X - X.mean())/X.std()
+Y = (Y - Y.mean())/Y.std()
+
+model = sm.OLS(Y, X).fit()
+print(model.summary())
+
+#%% Total Nett Revenue v/s Screens conditioned on Year, Budget, Screens, Run Length and First Week Revenue
+X = movie_master.loc[:, ['release_year', 'budget', 'screens']]
+X = pd.concat([X, fwr, run_length], axis = 1)
+X.columns = ['release_year', 'budget', 'screens', 'fwr', 'runlen']
+X['release_year'] = X['release_year'].astype('float')
+Y = movie_master['india-nett-gross']
+
+X = (X - X.mean())/X.std()
+Y = (Y - Y.mean())/Y.std()
+
+model = sm.OLS(Y, X).fit()
+print(model.summary())
+
+#%% Total Nett Revenue v/s Runtime conditioned on Year, Budget, Run Length and First Week Revenue
+X = movie_master.loc[:, ['release_year', 'budget', 'runtime']]
+X = pd.concat([X, fwr, run_length], axis = 1)
+X.columns = ['release_year', 'budget', 'runtime', 'fwr', 'runlen']
+X['release_year'] = X['release_year'].astype('float')
+Y = movie_master['india-nett-gross']
+
+X = (X - X.mean())/X.std()
+Y = (Y - Y.mean())/Y.std()
+
+model = sm.OLS(Y, X).fit()
+print(model.summary())
+
+#%% Total Nett Revenue v/s Budget, conditioned on Year, Inflation, Screens, Runtime and First Week Revenue
+X = movie_master.loc[:, ['release_year', 'inf_adj_fct', 'budget', 'screens', 'runtime']]
+X = pd.concat([X, fwr], axis = 1)
+X.columns = ['release_year', 'inflation', 'budget', 'screens', 'runtime', 'fwr']
 X['release_year'] = X['release_year'].astype('float')
 Y = movie_master['india-nett-gross']
 
@@ -150,10 +134,10 @@ Y = (Y - Y.mean())/Y.std()
 model = sm.OLS(Y, X).fit()
 print(model.summary())
 
-#%% Total Nett Revenue v/s Year, conditioned on Screens, First Week Revenue and Footfalls
-X = movie_master.loc[:, ['release_year', 'screens', 'india-footfalls']]
-X = pd.concat([X, fwr], axis = 1)
-X.columns = ['release_year', 'screens', 'india-footfalls', 'fwr']
+#%% Total Nett Revenue v/s Year, conditioned on Screens, First Week Revenue and Run Length
+X = movie_master.loc[:, ['release_year', 'screens']]
+X = pd.concat([X, fwr, run_length], axis = 1)
+X.columns = ['release_year', 'screens', 'fwr', 'runlen']
 X['release_year'] = X['release_year'].astype('float')
 Y = movie_master['india-nett-gross']
 
@@ -164,9 +148,9 @@ model = sm.OLS(Y, X).fit()
 print(model.summary())
 
 #%% Total Nett Revenue - Features of Likely Predictive Model
-X = movie_master.loc[:, ['release_year', 'screens', 'india-footfalls']]
-X = pd.concat([X, fwr], axis = 1)
-X.columns = ['release_year', 'screens', 'india-footfalls', 'fwr']
+X = movie_master.loc[:, ['release_year', 'screens']]
+X = pd.concat([X, fwr, run_length], axis = 1)
+X.columns = ['release_year', 'screens', 'fwr', 'runlen']
 X['release_year'] = X['release_year'].astype('float')
 Y = movie_master['india-nett-gross']
 
@@ -215,9 +199,9 @@ plt.show()
 #--> Likely non-linear response function
 
 #%% Total Nett Revenue Prediction Models - Tree Based
-X = movie_master.loc[:, ['release_year', 'screens', 'india-footfalls']]
-X = pd.concat([X, fwr], axis = 1)
-X.columns = ['release_year', 'screens', 'india-footfalls', 'fwr']
+X = movie_master.loc[:, ['release_year', 'screens']]
+X = pd.concat([X, fwr, run_length], axis = 1)
+X.columns = ['release_year', 'screens', 'fwr', 'runlen']
 X['release_year'] = X['release_year'].astype('float')
 Y = movie_master['india-nett-gross']
 

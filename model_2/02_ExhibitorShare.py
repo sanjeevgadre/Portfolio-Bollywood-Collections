@@ -4,8 +4,6 @@
 Created on Fri Jul 17 17:22:06 2020
 
 @author: sanjeev
-
-In this version we do not use footfalls, only run length in the prediction of total revenue
 """
 
 #%% Libraries
@@ -32,10 +30,13 @@ df = weekly_master.groupby('movie_id').sum().iloc[:, 3:]
 run_length = df.apply(lambda x: np.count_nonzero(x), axis = 1)
 run_length.reset_index(drop = True, inplace = True)
 
-#%% Total Nett Revenue v/s Release Week conditioned on Budget
+# Calculating Exhibitor Share (Total Nett Gross - Distributor Share)
+ex_share = movie_master['india-nett-gross'] - movie_master['india-distributor-share']
+
+#%% Exhibitor Share v/s Release Week conditioned on Budget
 X = movie_master.loc[:, ['release_week', 'budget']]
 X['release_week'] = X['release_week'].astype('float')
-Y = movie_master['india-nett-gross']
+Y = ex_share
 
 X = (X - X.mean())/X.std()
 Y = (Y - Y.mean())/Y.std()
@@ -43,11 +44,11 @@ Y = (Y - Y.mean())/Y.std()
 model = sm.OLS(Y, X).fit()
 print(model.summary())
 
-#%% Total Nett Revenue v/s Genre conditioned on Year
-X = movie_master.loc[:, ['release_year', 'genre']]
+#%% Exhibitor v/s Genre conditioned on Year and Footfalls
+X = movie_master.loc[:, ['release_year', 'india-footfalls', 'genre']]
 X['release_year'] = X['release_year'].astype('float')
 X = pd.get_dummies(X)
-Y = movie_master['india-nett-gross']
+Y = ex_share
 
 X = (X - X.mean())/X.std()
 Y = (Y - Y.mean())/Y.std()
@@ -55,13 +56,28 @@ Y = (Y - Y.mean())/Y.std()
 model = sm.OLS(Y, X).fit()
 print(model.summary())
 
-#%% Total Nett Revenue v/s Run Length conditioned on Year, Budget, Screens, Runtime and First Week Revenue
-X = movie_master.loc[:, ['release_year', 'budget', 'screens', 'runtime']]
+#%% Exhibitor Share v/s Total Revenue, conditioned over Year, Screens, First Week Revenue and Footfalls
+X = movie_master.loc[:, ['release_year', 'screens', 'india-footfalls', 'india-nett-gross']]
+X = pd.concat([X, fwr], axis = 1)
+X.columns = ['release_year', 'screens', 'india-footfalls', 'india-nett-gross', 'fwr']
+X['release_year'] = X['release_year'].astype('float')
+X = pd.get_dummies(X)
+Y = ex_share
+
+X = (X - X.mean())/X.std()
+Y = (Y - Y.mean())/Y.std()
+
+model = sm.OLS(Y, X).fit()
+print(model.summary())
+
+#%% Exhibitor Share v/s Footfalls, conditioned on Year, Genre, Screens, Runtime, First Week Revenue and Run Length
+X = movie_master.loc[:, ['release_year', 'genre', 'screens', 'runtime', 'india-footfalls']]
 X = pd.concat([X, fwr, run_length], axis = 1)
-X.columns = ['release_year', 'budget', 'screens', 'runtime', 'fwr', 'runlen']
+X.columns = ['release_year', 'genre', 'screens', 'runtime', 
+             'india-footfalls', 'fwr', 'runlen']
 X['release_year'] = X['release_year'].astype('float')
 X = pd.get_dummies(X)
-Y = movie_master['india-nett-gross']
+Y = ex_share
 
 X = (X - X.mean())/X.std()
 Y = (Y - Y.mean())/Y.std()
@@ -69,12 +85,30 @@ Y = (Y - Y.mean())/Y.std()
 model = sm.OLS(Y, X).fit()
 print(model.summary())
 
-#%% Total Nett Revenue v/s First Week Revenue conditioned on Year, Inflation, Budget, Screens
-X = movie_master.loc[:, ['release_year', 'inf_adj_fct', 'budget', 'screens']]
+
+#%% Exhibitor Share v/s Run Length conditioned on Year, Screens and First Week Revenue
+X = movie_master.loc[:, ['release_year', 'budget', 'screens', 'runtime', 'india-footfalls']]
+X = pd.concat([X, fwr, run_length], axis = 1)
+X.columns = ['release_year', 'budget', 'screens', 'runtime', 
+             'india-footfalls', 'fwr', 'runlen']
+X['release_year'] = X['release_year'].astype('float')
+X = pd.get_dummies(X)
+Y = ex_share
+
+X = (X - X.mean())/X.std()
+Y = (Y - Y.mean())/Y.std()
+
+model = sm.OLS(Y, X).fit()
+print(model.summary())
+
+#%% Exhibitor Share v/s First Week Revenue conditioned on Year, Inflation, Budget, Screens and Footfalls
+X = movie_master.loc[:, ['release_year', 'inf_adj_fct', 'budget', 'screens', 
+                         'india-footfalls']]
 X = pd.concat([X, fwr], axis = 1)
-X.columns = ['release_year', 'inflation', 'budget', 'screens', 'fwr']
+X.columns = ['release_year', 'inflation', 'budget', 'screens', 
+                         'india-footfalls', 'fwr']
 X['release_year'] = X['release_year'].astype('float')
-Y = movie_master['india-nett-gross']
+Y = ex_share
 
 X = (X - X.mean())/X.std()
 Y = (Y - Y.mean())/Y.std()
@@ -82,12 +116,14 @@ Y = (Y - Y.mean())/Y.std()
 model = sm.OLS(Y, X).fit()
 print(model.summary())
 
-#%% Total Nett Revenue v/s Screens conditioned on Year, Budget, Screens, Footfalls and First Week Revenue
-X = movie_master.loc[:, ['release_year', 'budget', 'screens']]
+#%% Exhibitor Share v/s Screens conditioned on Year, Budget, Screens, Total Nett Revenue, Footfalls and First Week Revenue
+X = movie_master.loc[:, ['release_year', 'budget', 'screens', 
+                         'india-nett-gross', 'india-footfalls']]
 X = pd.concat([X, fwr], axis = 1)
-X.columns = ['release_year', 'budget', 'screens', 'fwr']
+X.columns = ['release_year', 'budget', 'screens', 
+             'india-nett-gross', 'india-footfalls', 'fwr']
 X['release_year'] = X['release_year'].astype('float')
-Y = movie_master['india-nett-gross']
+Y = ex_share
 
 X = (X - X.mean())/X.std()
 Y = (Y - Y.mean())/Y.std()
@@ -95,10 +131,12 @@ Y = (Y - Y.mean())/Y.std()
 model = sm.OLS(Y, X).fit()
 print(model.summary())
 
-#%% Total Nett Revenue v/s Runtime conditioned on Year, Budget
-X = movie_master.loc[:, ['release_year', 'budget', 'runtime']]
+#%% Exhibitor v/s Runtime conditioned on Year, Budget Run Length and Footfalls
+X = movie_master.loc[:, ['release_year', 'budget', 'india-footfalls', 'runtime']]
+X = pd.concat([X, run_length], axis = 1)
+X.columns = ['release_year', 'budget', 'india-footfalls', 'runtime', 'runlen']
 X['release_year'] = X['release_year'].astype('float')
-Y = movie_master['india-nett-gross']
+Y = ex_share
 
 X = (X - X.mean())/X.std()
 Y = (Y - Y.mean())/Y.std()
@@ -106,12 +144,12 @@ Y = (Y - Y.mean())/Y.std()
 model = sm.OLS(Y, X).fit()
 print(model.summary())
 
-#%% Total Nett Revenue v/s Budget, conditioned on Year, Inflation, Screens, Runtime and First Week Revenue
-X = movie_master.loc[:, ['release_year', 'inf_adj_fct', 'budget', 'screens', 'runtime']]
-X = pd.concat([X, fwr], axis = 1)
-X.columns = ['release_year', 'inflation', 'budget', 'screens', 'runtime', 'fwr']
+#%% Exhibitor Share v/s Budget, conditioned on Year, Inflation, Run Length and First Week Revenue
+X = movie_master.loc[:, ['release_year', 'inf_adj_fct', 'budget']]
+X = pd.concat([X, run_length, fwr], axis = 1)
+X.columns = ['release_year', 'inflation', 'budget', 'runlen', 'fwr']
 X['release_year'] = X['release_year'].astype('float')
-Y = movie_master['india-nett-gross']
+Y = ex_share
 
 X = (X - X.mean())/X.std()
 Y = (Y - Y.mean())/Y.std()
@@ -119,38 +157,37 @@ Y = (Y - Y.mean())/Y.std()
 model = sm.OLS(Y, X).fit()
 print(model.summary())
 
-#%% Total Nett Revenue v/s Inflation conditioned on Year and First Week Revenue
+#%% Exhibitor Share v/s Inflation conditioned on Year and First Week Revenue
 X = movie_master.loc[:, ['release_year', 'inf_adj_fct']]
 X = pd.concat([X, fwr], axis = 1)
 X.columns = ['release_year', 'inflation', 'fwr']
 X['release_year'] = X['release_year'].astype('float')
-Y = movie_master['india-nett-gross']
-
+Y = ex_share
 X = (X - X.mean())/X.std()
 Y = (Y - Y.mean())/Y.std()
 
 model = sm.OLS(Y, X).fit()
 print(model.summary())
 
-#%% Total Nett Revenue v/s Year, conditioned on Screens, First Week Revenue and Footfalls
-X = movie_master.loc[:, ['release_year', 'screens', 'runtime']]
-X = pd.concat([X, fwr], axis = 1)
-X.columns = ['release_year', 'screens', 'runtime', 'fwr']
-X['release_year'] = X['release_year'].astype('float')
-Y = movie_master['india-nett-gross']
-
-X = (X - X.mean())/X.std()
-Y = (Y - Y.mean())/Y.std()
-
-model = sm.OLS(Y, X).fit()
-print(model.summary())
-
-#%% Total Nett Revenue - Features of Likely Predictive Model
-X = movie_master.loc[:, ['runtime', 'screens']]
+#%% Exhibitor Share v/s Year, conditioned on Total Nett Revenue, Run Length, First Week Revenue and Footfalls
+X = movie_master.loc[:, ['release_year', 'india-nett-gross', 'india-footfalls']]
 X = pd.concat([X, fwr, run_length], axis = 1)
-X.columns = ['runtime', 'screens', 'fwr', 'runlen']
+X.columns = ['release_year', 'india-nett-gross', 'india-footfalls', 'fwr', 'runlen']
+X['release_year'] = X['release_year'].astype('float')
+Y = ex_share
 
-Y = movie_master['india-nett-gross']
+X = (X - X.mean())/X.std()
+Y = (Y - Y.mean())/Y.std()
+
+model = sm.OLS(Y, X).fit()
+print(model.summary())
+
+#%% Exhibitor Share - Features of Likely Predictive Model
+X = movie_master.loc[:, ['india-footfalls', 'india-nett-gross']]
+X = pd.concat([X, fwr, run_length], axis = 1)
+X.columns = ['india-footfalls', 'india-nett-gross', 'fwr', 'runlen']
+Y = ex_share
+Y[1094] = 1             # hack
 
 # Should not standardize when doing heteroscedacidy analysis as log transformations can lead to NANs
 
@@ -165,7 +202,7 @@ Y_hat = Y_hat/1000000
 plt.scatter(Y_hat, studentized_residuals)
 plt.grid(True, which = 'major', axis = 'y')
 plt.ylabel('Studentized Residuals')
-plt.xlabel('Predicted Total Nett Revenue')
+plt.xlabel('Predicted Exhibitor Share')
 plt.show()
 
 #--> Clearly there is heteroscedacity. To eliminate heteroscedacity, we try fitting a model using the log values of Y
@@ -178,7 +215,7 @@ plt.figure()
 plt.scatter(Y_hat, studentized_residuals)
 plt.grid(True, which = 'major', axis = 'y')
 plt.ylabel('Studentized Residuals')
-plt.xlabel('Predicted Log Value of Total Nett Revenue')
+plt.xlabel('Predicted Log Value of Exhibitor Share')
 plt.show()
 
 #--> Does eliminate heteroscedacity. Should use log values of Y for further investigation and modelling
@@ -190,18 +227,18 @@ residuals = Y_hat - Y
 plt.figure(figsize = (15, 5))
 sns.set(style="whitegrid")
 axs = sns.residplot(Y_hat, residuals, lowess = True)
-axs.set_xlabel('Predicted Log Values of Total Nett Revenue')
+axs.set_xlabel('Predicted Log Values of Exhibitor Share')
 axs.set_ylabel('Residuals')
 plt.show()
 
 #--> Likely non-linear response function
 
-#%% Total Nett Revenue Prediction Models - Tree Based
-X = movie_master.loc[:, ['runtime', 'screens']]
+#%% Exhibitor Share Prediction Models - Tree Based
+X = movie_master.loc[:, ['india-footfalls', 'india-nett-gross']]
 X = pd.concat([X, fwr, run_length], axis = 1)
-X.columns = ['runtime', 'screens', 'fwr', 'runlen']
-
-Y = movie_master['india-nett-gross']
+X.columns = ['india-footfalls', 'india-nett-gross', 'fwr', 'runlen']
+Y = ex_share
+Y[1094] = 1 
 
 rf_est = RandomForestRegressor(random_state = 1970)
 gb_est = GradientBoostingRegressor(random_state = 1970)
@@ -226,14 +263,14 @@ gb_mod = GridSearchCV(gb_est, param_grid = gb_param_grid,
 print('The best fit Gradient Boosted Tree Regressor reports a cross-validated MAE of %.0f' % -gb_mod.best_score_)
 print('The parameters for the best fit model are %s' % gb_mod.best_params_)
 
-## Boosted Tree Ensemble delivers best results (lower MAE)
+## Boosted Tree Ensemble delivers beter results (lower MAE)
 
-#%% Total Nett Revenue Prediction Model Performance
+#%% Exhibitor Share Prediction Model Performance
 
 X_train, X_test, Y_train, Y_test = train_test_split(X, Y, random_state = 1970)
 
 gb_est_best = GradientBoostingRegressor(random_state = 1970).set_params(**gb_mod.best_params_)
-gb_mod_best = gb_est_best.fit(X_train, Y_train)
+gb_mod_best = gb_est.fit(X_train, Y_train)
 print('The R^2 for the model using test data: %.4f' % gb_mod_best.score(X_test, Y_test))
 
 Y_test_hat = gb_mod_best.predict(X_test)
@@ -245,7 +282,7 @@ for interval in intervals:
     cnt = len([x for x in err_mae if x < interval])
     cnt = 100*cnt/len(err_mae)
     print('Percentage of estimates for test set that are off by less than %.0f%% from true value: %.2f' % (100*interval, cnt))
-    
+
 #%% Saving the best fit ensemble parameters
-with open('./totrev_best_param.pkl', 'w+b') as handle:
+with open('./exsh_best_param.pkl', 'w+b') as handle:
     pickle.dump(gb_mod.best_params_, handle)

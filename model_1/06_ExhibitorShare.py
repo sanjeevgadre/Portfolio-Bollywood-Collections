@@ -44,167 +44,136 @@ Y = (Y - Y.mean())/Y.std()
 model = sm.OLS(Y, X).fit()
 print(model.summary())
 
-#%% Exhibitor Share v/s Genre conditioned on Year
-corr_lst = []
-years = movie_master['release_year'].unique()
-for year in years:
-    X = movie_master.loc[movie_master['release_year'] == year]['genre']
-    indx = movie_master.loc[movie_master['release_year'] == year].index
-    Y = ex_share[indx]
-    corr = Y.corr(X, method = 'spearman')
-    corr_lst.append(corr)
+#%% Exhibitor v/s Genre conditioned on Year and Footfalls
+X = movie_master.loc[:, ['release_year', 'india-footfalls', 'genre']]
+X['release_year'] = X['release_year'].astype('float')
+X = pd.get_dummies(X)
+Y = ex_share
 
-print('Average Spearman Correlation Coeff: %.4f' % np.mean(corr_lst))
+X = (X - X.mean())/X.std()
+Y = (Y - Y.mean())/Y.std()
 
-plt.figure()
-plt.scatter(years, corr_lst)
-plt.ylim(-1, 1)
-plt.xlabel('Year of Release')
-plt.axhline(y = np.mean(corr_lst), color='r', linestyle='-')
-plt.axhline(y = 0.3, color = 'b', linestyle='--')
-plt.axhline(y = -0.3, color = 'b', linestyle='--')
-plt.title('Spearman Correlation: Exhibitor Share v/s Genre')
-plt.grid(axis = 'y')
-plt.savefig('./figs/es/02_COR.jpg', dpi = 'figure')
-plt.show()
-plt.close()
+model = sm.OLS(Y, X).fit()
+print(model.summary())
 
-#%% Exhibitor Share v/s Footfalls, conditioned on Year, Budget, First Week Revenue and Run Length
-pvalue_lst = []
-years = movie_master['release_year'].unique()
-for year in years:
-    X = movie_master.loc[movie_master['release_year'] == year, ['budget', 'india-footfalls']]
-    indx = movie_master.loc[movie_master['release_year'] == year].index
-    X = pd.concat([X, fwr[indx], run_length[indx], ], axis = 1)
-    X.columns = ['budget', 'footfalls', 'fwr', 'run_len']
-    Y = ex_share[indx]
-    X = (X - X.mean())/X.std()
-    Y = (Y - Y.mean())/Y.std()
-    model = sm.OLS(Y, X).fit()
-    pvalue_lst.append(model.pvalues['footfalls'])
+#%% Exhibitor Share v/s Total Revenue, conditioned over Year, Screens, First Week Revenue and Footfalls
+X = movie_master.loc[:, ['release_year', 'screens', 'india-footfalls', 'india-nett-gross']]
+X = pd.concat([X, fwr], axis = 1)
+X.columns = ['release_year', 'screens', 'india-footfalls', 'india-nett-gross', 'fwr']
+X['release_year'] = X['release_year'].astype('float')
+X = pd.get_dummies(X)
+Y = ex_share
 
-plt.figure()
-plt.scatter(years, pvalue_lst)
-plt.xlabel('Year of Release')
-plt.axhline(y = 0.05, color='r', linestyle='--')
-plt.title('p-values for Regression Coefficient: Exhibitor Share v/s Footfalls')
-plt.grid(axis = 'y')
-plt.savefig('./figs/es/03_COR.jpg', dpi = 'figure')
-plt.show()
-plt.close()
+X = (X - X.mean())/X.std()
+Y = (Y - Y.mean())/Y.std()
+
+model = sm.OLS(Y, X).fit()
+print(model.summary())
+
+#%% Exhibitor Share v/s Footfalls, conditioned on Year, Genre, Screens, Runtime, First Week Revenue and Run Length
+X = movie_master.loc[:, ['release_year', 'genre', 'screens', 'runtime', 'india-footfalls']]
+X = pd.concat([X, fwr, run_length], axis = 1)
+X.columns = ['release_year', 'genre', 'screens', 'runtime', 
+             'india-footfalls', 'fwr', 'runlen']
+X['release_year'] = X['release_year'].astype('float')
+X = pd.get_dummies(X)
+Y = ex_share
+
+X = (X - X.mean())/X.std()
+Y = (Y - Y.mean())/Y.std()
+
+model = sm.OLS(Y, X).fit()
+print(model.summary())
 
 
 #%% Exhibitor Share v/s Run Length conditioned on Year, Screens and First Week Revenue
-pvalue_lst = []
-years = movie_master['release_year'].unique()
-for year in years:
-    X = movie_master.loc[movie_master['release_year'] == year, ['screens']]
-    indx = movie_master.loc[movie_master['release_year'] == year].index
-    X = pd.concat([X, fwr[indx], run_length[indx]], axis = 1)
-    X.columns = ['screens', 'fwr', 'run_len']
-    Y = ex_share[indx]
-    X = (X - X.mean())/X.std()
-    Y = (Y - Y.mean())/Y.std()
-    model = sm.OLS(Y, X).fit()
-    pvalue_lst.append(model.pvalues['run_len'])
-
-plt.figure()
-plt.scatter(years, pvalue_lst)
-plt.xlabel('Year of Release')
-plt.axhline(y = 0.05, color='r', linestyle='--')
-plt.title('p-values for Regression Coefficient: Exhibitor Share v/s Run Length')
-plt.grid(axis = 'y')
-plt.savefig('./figs/es/04_COR.jpg', dpi = 'figure')
-plt.show()
-plt.close()
-
-#%% Exhibitor Share v/s First Week Revenue conditioned on Budget and Screens
-X = movie_master.loc[:, ['budget', 'screens']]
-X = pd.concat([X, fwr], axis = 1)
-X.columns = ['budget', 'screens', 'fwr']
-Y = ex_share
-X = (X - X.mean())/X.std()
-Y = (Y - Y.mean())/Y.std()
-
-model = sm.OLS(Y, X).fit()
-print(model.summary())
-
-#%% Exhibitor Share v/s Screens conditioned on Budget
-X = movie_master.loc[:, ['budget', 'screens']]
-Y = ex_share
-X = (X - X.mean())/X.std()
-Y = (Y - Y.mean())/Y.std()
-
-model = sm.OLS(Y, X).fit()
-print(model.summary())
-
-#%% Exhibitor Share v/s Runtime conditioned on Budget and Year
-pvalue_lst = []
-years = movie_master['release_year'].unique()
-for year in years:
-    X = movie_master.loc[movie_master['release_year'] == year, ['budget', 'runtime']]
-    indx = movie_master.loc[movie_master['release_year'] == year].index
-    Y = ex_share[indx]
-    X = (X - X.mean())/X.std()
-    Y = (Y - Y.mean())/Y.std()
-    model = sm.OLS(Y, X).fit()
-    pvalue_lst.append(model.pvalues['runtime'])
-
-plt.figure()
-plt.scatter(years, pvalue_lst)
-plt.xlabel('Year of Release')
-plt.axhline(y = 0.05, color='r', linestyle='--')
-plt.title('p-values for Regression Coefficient: Exhibitor Share v/s Runtime')
-plt.grid(axis = 'y')
-plt.savefig('./figs/es/07_COR.jpg', dpi = 'figure')
-plt.show()
-plt.close()
-
-#%% Exhibitor Share v/s Budget, conditioned on Year
-years = movie_master['release_year'].unique()
-corr_lst = []
-for year in years:
-    X = movie_master.loc[movie_master['release_year'] == year, 'budget']
-    indx = movie_master.loc[movie_master['release_year'] == year].index
-    Y = ex_share[indx]
-    corr = X.corr(Y, method = 'spearman')
-    corr_lst.append(corr)
-    
-print('Average Spearman Correlation Coeff: %.4f' % np.mean(corr_lst))
-
-plt.figure()
-plt.scatter(years, corr_lst)
-plt.ylim(0, 1)
-plt.xlabel('Year of Release')
-plt.axhline(y = np.mean(corr_lst), color='r', linestyle='-')
-plt.axhline(y = 0.3, color = 'b', linestyle='--')
-plt.title('Spearman Correlation: Exhibitor Share v/s Budget')
-plt.grid(axis = 'y')
-plt.savefig('./figs/es/08_COR.jpg', dpi = 'figure')
-plt.show()
-plt.close()
-
-#%% Exhibitor Share v/s Year, conditioned on Inflation
-X = movie_master['release_year']
-Y = ex_share * movie_master['inf_adj_fct']
-corr = X.corr(Y, method = 'spearman')
-print('Total Effect of Y on E, adjusted for inflation, : %.4f' % corr)
-
-X = movie_master['budget']
-Y = ex_share
-corr = X.corr(Y, method = 'spearman')
-print('Total Effect of B on E : %.4f' % corr)
-
-## First Week Revenue v/s Year
-X = movie_master['release_year']
-Y = ex_share
-corr = X.corr(Y, method = 'spearman')
-print('Total Effect of Y on F : %.4f' % corr)
-
-#%% Exhibitor Share v/s Total Nett Revenue, conditioned on Footfalls, Run Length, First Week Revenue, Release Screens and Budget
-X = movie_master.loc[:, ['budget', 'screens', 'india-nett-gross', 'india-footfalls']]
+X = movie_master.loc[:, ['release_year', 'budget', 'screens', 'runtime', 'india-footfalls']]
 X = pd.concat([X, fwr, run_length], axis = 1)
-X.columns = ['budget', 'screens', 'india-nett-gross', 'india-footfalls', 'fwr', 'run_len']
+X.columns = ['release_year', 'budget', 'screens', 'runtime', 
+             'india-footfalls', 'fwr', 'runlen']
+X['release_year'] = X['release_year'].astype('float')
+X = pd.get_dummies(X)
+Y = ex_share
+
+X = (X - X.mean())/X.std()
+Y = (Y - Y.mean())/Y.std()
+
+model = sm.OLS(Y, X).fit()
+print(model.summary())
+
+#%% Exhibitor Share v/s First Week Revenue conditioned on Year, Inflation, Budget, Screens and Footfalls
+X = movie_master.loc[:, ['release_year', 'inf_adj_fct', 'budget', 'screens', 
+                         'india-footfalls']]
+X = pd.concat([X, fwr], axis = 1)
+X.columns = ['release_year', 'inflation', 'budget', 'screens', 
+                         'india-footfalls', 'fwr']
+X['release_year'] = X['release_year'].astype('float')
+Y = ex_share
+
+X = (X - X.mean())/X.std()
+Y = (Y - Y.mean())/Y.std()
+
+model = sm.OLS(Y, X).fit()
+print(model.summary())
+
+#%% Exhibitor Share v/s Screens conditioned on Year, Budget, Screens, Total Nett Revenue, Footfalls and First Week Revenue
+X = movie_master.loc[:, ['release_year', 'budget', 'screens', 
+                         'india-nett-gross', 'india-footfalls']]
+X = pd.concat([X, fwr], axis = 1)
+X.columns = ['release_year', 'budget', 'screens', 
+             'india-nett-gross', 'india-footfalls', 'fwr']
+X['release_year'] = X['release_year'].astype('float')
+Y = ex_share
+
+X = (X - X.mean())/X.std()
+Y = (Y - Y.mean())/Y.std()
+
+model = sm.OLS(Y, X).fit()
+print(model.summary())
+
+#%% Exhibitor v/s Runtime conditioned on Year, Budget Run Length and Footfalls
+X = movie_master.loc[:, ['release_year', 'budget', 'india-footfalls', 'runtime']]
+X = pd.concat([X, run_length], axis = 1)
+X.columns = ['release_year', 'budget', 'india-footfalls', 'runtime', 'runlen']
+X['release_year'] = X['release_year'].astype('float')
+Y = ex_share
+
+X = (X - X.mean())/X.std()
+Y = (Y - Y.mean())/Y.std()
+
+model = sm.OLS(Y, X).fit()
+print(model.summary())
+
+#%% Exhibitor Share v/s Budget, conditioned on Year, Inflation, Run Length and First Week Revenue
+X = movie_master.loc[:, ['release_year', 'inf_adj_fct', 'budget']]
+X = pd.concat([X, run_length, fwr], axis = 1)
+X.columns = ['release_year', 'inflation', 'budget', 'runlen', 'fwr']
+X['release_year'] = X['release_year'].astype('float')
+Y = ex_share
+
+X = (X - X.mean())/X.std()
+Y = (Y - Y.mean())/Y.std()
+
+model = sm.OLS(Y, X).fit()
+print(model.summary())
+
+#%% Exhibitor Share v/s Inflation conditioned on Year and First Week Revenue
+X = movie_master.loc[:, ['release_year', 'inf_adj_fct']]
+X = pd.concat([X, fwr], axis = 1)
+X.columns = ['release_year', 'inflation', 'fwr']
+X['release_year'] = X['release_year'].astype('float')
+Y = ex_share
+X = (X - X.mean())/X.std()
+Y = (Y - Y.mean())/Y.std()
+
+model = sm.OLS(Y, X).fit()
+print(model.summary())
+
+#%% Exhibitor Share v/s Year, conditioned on Total Nett Revenue, Run Length, First Week Revenue and Footfalls
+X = movie_master.loc[:, ['release_year', 'india-nett-gross', 'india-footfalls']]
+X = pd.concat([X, fwr, run_length], axis = 1)
+X.columns = ['release_year', 'india-nett-gross', 'india-footfalls', 'fwr', 'runlen']
+X['release_year'] = X['release_year'].astype('float')
 Y = ex_share
 
 X = (X - X.mean())/X.std()
@@ -214,9 +183,9 @@ model = sm.OLS(Y, X).fit()
 print(model.summary())
 
 #%% Exhibitor Share - Features of Likely Predictive Model
-X = movie_master.loc[:, ['budget', 'india-footfalls', 'screens', 'india-nett-gross']]
+X = movie_master.loc[:, ['india-footfalls', 'india-nett-gross']]
 X = pd.concat([X, fwr, run_length], axis = 1)
-X.columns = ['budget', 'india-footfalls', 'screens', 'india-nett-gross', 'fwr', 'runlen']
+X.columns = ['india-footfalls', 'india-nett-gross', 'fwr', 'runlen']
 Y = ex_share
 Y[1094] = 1             # hack
 
@@ -264,12 +233,12 @@ plt.show()
 
 #--> Likely non-linear response function
 
-
 #%% Exhibitor Share Prediction Models - Tree Based
-X = movie_master.loc[:, ['budget', 'india-footfalls', 'screens', 'india-nett-gross']]
+X = movie_master.loc[:, ['india-footfalls', 'india-nett-gross']]
 X = pd.concat([X, fwr, run_length], axis = 1)
-X.columns = ['budget', 'india-footfalls', 'screens', 'india-nett-gross', 'fwr', 'runlen']
+X.columns = ['india-footfalls', 'india-nett-gross', 'fwr', 'runlen']
 Y = ex_share
+Y[1094] = 1 
 
 rf_est = RandomForestRegressor(random_state = 1970)
 gb_est = GradientBoostingRegressor(random_state = 1970)
